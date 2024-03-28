@@ -26,8 +26,9 @@ type ParentMessage = {
 };
 
 function Auth() {
+  const [success, setSuccess] = useState<boolean | null>(null);
   const [origin, setOrigin] = useState<string | null>(null);
-  const [username, setUsername] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | undefined>(undefined);
   const challengeRef = useRef<ArrayBuffer | null>(null);
   const { identities, fingerprints } = useIdentities();
   const [currentIdentity, setCurrentIdentity] = useState<CryptoKeyPair | null>(
@@ -43,7 +44,7 @@ function Auth() {
   const handleSign = useCallback(async () => {
     if (currentIdentity === null || challengeRef.current === null) return;
     const signature = await crypto.subtle.sign(
-      "ECDSA",
+      { name: "ECDSA", hash: "SHA-256" },
       currentIdentity.privateKey,
       challengeRef.current
     );
@@ -52,11 +53,13 @@ function Auth() {
         type: "signature",
         fingerprint: fingerprints.get(currentIdentity),
         signature,
+        publicKey: currentIdentity.publicKey,
       },
       origin,
       [signature]
     );
-    setTimeout(() => window.close(), 3000);
+    setSuccess(true);
+    setTimeout(() => window.close(), 1000);
   }, [currentIdentity, fingerprints, origin]);
 
   useEffect(() => {
@@ -78,7 +81,37 @@ function Auth() {
   }, [identities, currentIdentity]);
 
   return identities === null || origin === null ? (
-    <CircularProgress />
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100%",
+      }}
+    >
+      <CircularProgress />
+    </Box>
+  ) : success !== null ? (
+    success ? (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          gap: 2,
+        }}
+      >
+        <Box>Success!</Box>
+        <Button variant="contained" onClick={() => window.close()}>
+          Close
+        </Button>
+      </Box>
+    ) : (
+      "Failed"
+    )
   ) : (
     <Stack
       spacing={2}
@@ -86,6 +119,7 @@ function Auth() {
         height: "100%",
         flexDirection: { xs: "column", lg: "row" },
         alignItems: "center",
+        gap: 2,
         "& > *": {
           sx: { flex: 0 },
           lg: { flex: "1 0" },
@@ -94,11 +128,11 @@ function Auth() {
     >
       <Box>
         <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
-          <img src="/logo192.png" alt="logo" width="64" height="64" />
+          <img src="/logo192.png" alt="Logo" width="96" height="96" />
         </Box>
         <ListItemText
           primary={origin}
-          secondary={"wants to access your identity " + username}
+          secondary={"wants to access your identity " + (username ?? "")}
         />
       </Box>
       <Stack spacing={2} sx={{ width: "100%" }}>
@@ -113,11 +147,13 @@ function Auth() {
               setCurrentIdentity(reverseFingerprints.get(event.target.value))
             }
           >
-            {identities.map((keypair, index) => (
-              <MenuItem key={index} value={fingerprints.get(keypair)}>
-                {fingerprints.get(keypair)?.slice(0, 8)}
-              </MenuItem>
-            ))}
+            {identities
+              .filter((keypair) => fingerprints.get(keypair) !== undefined)
+              .map((keypair, index) => (
+                <MenuItem key={index} value={fingerprints.get(keypair)}>
+                  {fingerprints.get(keypair).slice(0, 8)}
+                </MenuItem>
+              ))}
           </Select>
         </FormControl>
         <Stack
