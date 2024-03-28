@@ -48,7 +48,7 @@ function authenticate() {
         { type: "auth", challenge, origin: window.location.origin },
         "*"
       );
-    });
+    }, 500);
     childWindow.onmessage = async (event) => {
       if (event.data.type === "signature") {
         clearInterval(interval);

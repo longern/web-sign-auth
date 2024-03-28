@@ -63,6 +63,7 @@ function Auth() {
   }, [currentIdentity, fingerprints, origin]);
 
   useEffect(() => {
+    if (origin !== null) return;
     const handleMessage = async (event: MessageEvent<ParentMessage>) => {
       if (event.source !== window.opener) return;
       if (event.data.type === "auth") {
@@ -74,7 +75,7 @@ function Auth() {
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [origin]);
 
   useEffect(() => {
     if (identities === null || currentIdentity !== null) return;
@@ -127,7 +128,7 @@ function Auth() {
         },
       }}
     >
-      <Box>
+      <Box sx={{ width: "100%" }}>
         <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
           <img src="/logo192.png" alt="Logo" width="96" height="96" />
         </Box>
