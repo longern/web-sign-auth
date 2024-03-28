@@ -64,6 +64,7 @@ function Auth() {
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent<ParentMessage>) => {
+      if (event.source !== window.opener) return;
       if (event.data.type === "auth") {
         if (!event.data.origin || !event.data.challenge) return;
         setOrigin(event.data.origin);

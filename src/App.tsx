@@ -5,23 +5,26 @@ import {
   CircularProgress,
   Container,
   CssBaseline,
+  Divider,
   List,
   ListItem,
   ListItemButton,
+  ListItemText,
+  Snackbar,
   Stack,
   ThemeProvider,
   Tooltip,
   Typography,
   createTheme,
 } from "@mui/material";
-import React from "react";
+import React, { useCallback } from "react";
 import { createIdentity, useIdentities } from "./useIdentities";
 import Auth from "./Auth";
 
 const theme = createTheme({
   palette: {
     background: {
-      default: "whitesmoke",
+      default: "#f5f5f5",
     },
   },
   typography: {
@@ -31,12 +34,16 @@ const theme = createTheme({
   },
 });
 
-function handleTryIdentity() {
+function authenticate() {
   return new Promise<string>((resolve, reject) => {
     const childWindow = window.open(window.location.href);
     if (!childWindow) return;
     const challenge = crypto.getRandomValues(new Uint8Array(32)).buffer;
     const interval = setInterval(() => {
+      if (childWindow.closed) {
+        clearInterval(interval);
+        reject(new Error("Window closed"));
+      }
       childWindow.postMessage(
         { type: "auth", challenge, origin: window.location.origin },
         "*"
@@ -59,11 +66,29 @@ function handleTryIdentity() {
         }
       }
     };
+
+    setTimeout(() => {
+      if (childWindow.closed) return;
+      childWindow.close();
+      clearInterval(interval);
+      reject(new Error("Timeout"));
+    }, 30000);
   });
 }
 
 function IdentityList() {
   const { identities, fingerprints, setIdentities } = useIdentities();
+  const [message, setMessage] = React.useState<string | null>(null);
+
+  const handleTryIdentity = useCallback(() => {
+    authenticate()
+      .then((fingerprint) => {
+        setMessage(`Authenticated as ${fingerprint.slice(0, 8)}`);
+      })
+      .catch((error) => {
+        setMessage(error.message);
+      });
+  }, []);
 
   return identities === null ? (
     <CircularProgress />
@@ -78,7 +103,7 @@ function IdentityList() {
         },
       }}
     >
-      <Stack sx={{ alignItems: "center", margin: 4, gap: 2 }}>
+      <Stack sx={{ alignItems: "center", marginY: 4, gap: 2 }}>
         <img src="/logo192.png" alt="Logo" width="96" height="96" />
         <Typography variant="h4">Web Sign Auth</Typography>
       </Stack>
@@ -86,13 +111,18 @@ function IdentityList() {
         {identities.length > 0 && (
           <List>
             {identities.map((keypair, index) => (
-              <ListItem key={index} disablePadding>
-                <Tooltip title={fingerprints.get(keypair)}>
-                  <ListItemButton>
-                    {fingerprints.get(keypair)?.slice(0, 8)}
-                  </ListItemButton>
-                </Tooltip>
-              </ListItem>
+              <React.Fragment key={index}>
+                <ListItem disablePadding>
+                  <Tooltip title={fingerprints.get(keypair)}>
+                    <ListItemButton>
+                      <ListItemText
+                        primary={fingerprints.get(keypair)?.slice(0, 8)}
+                      />
+                    </ListItemButton>
+                  </Tooltip>
+                </ListItem>
+                <Divider />
+              </React.Fragment>
             ))}
           </List>
         )}
@@ -115,6 +145,12 @@ function IdentityList() {
           >
             Try Identity
           </Button>
+          <Snackbar
+            open={message !== null}
+            autoHideDuration={5000}
+            onClose={() => setMessage(null)}
+            message={message}
+          />
         </CardActions>
       </Stack>
     </Stack>
