@@ -20,6 +20,7 @@ import {
 import React, { useCallback } from "react";
 import { createIdentity, useIdentities } from "./useIdentities";
 import Auth from "./Auth";
+import IdentityDialog from "./IdentityDialog";
 
 const theme = createTheme({
   palette: {
@@ -79,6 +80,9 @@ function authenticate() {
 function IdentityList() {
   const { identities, fingerprints, setIdentities } = useIdentities();
   const [message, setMessage] = React.useState<string | null>(null);
+  const [currentIdentity, setCurrentIdentity] =
+    React.useState<CryptoKeyPair | null>(null);
+  const [showIdentityDialog, setShowIdentityDialog] = React.useState(false);
 
   const handleTryIdentity = useCallback(() => {
     authenticate()
@@ -115,7 +119,12 @@ function IdentityList() {
               <React.Fragment key={index}>
                 <ListItem disablePadding>
                   <Tooltip title={fingerprints.get(keypair)}>
-                    <ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        setCurrentIdentity(keypair);
+                        setShowIdentityDialog(true);
+                      }}
+                    >
                       <ListItemText
                         primary={fingerprints.get(keypair)?.slice(0, 8)}
                       />
@@ -154,6 +163,11 @@ function IdentityList() {
           />
         </CardActions>
       </Stack>
+      <IdentityDialog
+        identity={currentIdentity}
+        open={showIdentityDialog}
+        onClose={() => setShowIdentityDialog(false)}
+      />
     </Stack>
   );
 }
