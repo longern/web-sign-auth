@@ -72,7 +72,7 @@ function authenticate() {
       childWindow.close();
       clearInterval(interval);
       reject(new Error("Timeout"));
-    }, 30000);
+    }, 60000);
   });
 }
 
@@ -108,6 +108,7 @@ function IdentityList() {
         <Typography variant="h4">Web Sign Auth</Typography>
       </Stack>
       <Stack sx={{ width: "100%" }}>
+        <Typography variant="h5">Identities</Typography>
         {identities.length > 0 && (
           <List>
             {identities.map((keypair, index) => (
@@ -126,7 +127,7 @@ function IdentityList() {
             ))}
           </List>
         )}
-        <CardActions>
+        <CardActions sx={{ marginTop: 4 }}>
           <Button
             size="large"
             onClick={() =>

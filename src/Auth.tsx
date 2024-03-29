@@ -8,6 +8,7 @@ import {
   MenuItem,
   Select,
   Stack,
+  Typography,
 } from "@mui/material";
 import React, {
   useCallback,
@@ -59,7 +60,7 @@ function Auth() {
       [signature]
     );
     setSuccess(true);
-    setTimeout(() => window.close(), 1000);
+    window.close();
   }, [currentIdentity, fingerprints, origin]);
 
   useEffect(() => {
@@ -106,10 +107,9 @@ function Auth() {
           gap: 2,
         }}
       >
-        <Box>Success!</Box>
-        <Button variant="contained" onClick={() => window.close()}>
-          Close
-        </Button>
+        <Box>
+          You have signed as identity {fingerprints.get(currentIdentity)}
+        </Box>
       </Box>
     ) : (
       "Failed"
@@ -129,15 +129,16 @@ function Auth() {
       }}
     >
       <Box sx={{ width: "100%" }}>
-        <Box sx={{ display: "flex", justifyContent: "center", padding: 4 }}>
+        <Stack sx={{ alignItems: "center", marginY: 4, gap: 2 }}>
           <img src="/logo192.png" alt="Logo" width="96" height="96" />
-        </Box>
+          <Typography variant="h4">Web Sign Auth</Typography>
+        </Stack>
         <ListItemText
           primary={origin}
           secondary={"wants to access your identity " + (username ?? "")}
         />
       </Box>
-      <Stack spacing={2} sx={{ width: "100%" }}>
+      <Stack spacing={4} sx={{ width: "100%" }}>
         <FormControl>
           <InputLabel id="select-identity-label">Identity</InputLabel>
           <Select
