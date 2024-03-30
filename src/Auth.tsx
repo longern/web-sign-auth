@@ -10,14 +10,8 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { useIdentities } from "./useIdentities";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Identity, useIdentities } from "./useIdentities";
 
 type ParentMessage = {
   type: "auth";
@@ -31,16 +25,8 @@ function Auth() {
   const [origin, setOrigin] = useState<string | null>(null);
   const [username, setUsername] = useState<string | undefined>(undefined);
   const challengeRef = useRef<ArrayBuffer | null>(null);
-  const { identities, fingerprints } = useIdentities();
-  const [currentIdentity, setCurrentIdentity] = useState<CryptoKeyPair | null>(
-    null
-  );
-
-  const reverseFingerprints = useMemo(() => {
-    return new Map(
-      Array.from(fingerprints).map(([key, value]) => [value, key])
-    );
-  }, [fingerprints]);
+  const { identities } = useIdentities();
+  const [currentIdentity, setCurrentIdentity] = useState<Identity | null>(null);
 
   const handleSign = useCallback(async () => {
     if (currentIdentity === null || challengeRef.current === null) return;
@@ -52,7 +38,7 @@ function Auth() {
     window.parent.postMessage(
       {
         type: "signature",
-        fingerprint: fingerprints.get(currentIdentity),
+        fingerprint: currentIdentity.fingerprint,
         signature,
         publicKey: currentIdentity.publicKey,
       },
@@ -61,7 +47,7 @@ function Auth() {
     );
     setSuccess(true);
     window.close();
-  }, [currentIdentity, fingerprints, origin]);
+  }, [currentIdentity, origin]);
 
   useEffect(() => {
     if (origin !== null) return;
@@ -107,9 +93,7 @@ function Auth() {
           gap: 2,
         }}
       >
-        <Box>
-          You have signed as identity {fingerprints.get(currentIdentity)}
-        </Box>
+        <Box>You have signed as identity {currentIdentity.fingerprint}</Box>
       </Box>
     ) : (
       "Failed"
@@ -145,18 +129,20 @@ function Auth() {
             labelId="select-identity-label"
             id="select-identity"
             label="Identity"
-            value={fingerprints.get(currentIdentity) ?? ""}
+            value={currentIdentity.fingerprint}
             onChange={(event) =>
-              setCurrentIdentity(reverseFingerprints.get(event.target.value))
+              setCurrentIdentity(
+                identities.find(
+                  (identity) => identity.fingerprint === event.target.value
+                ) ?? null
+              )
             }
           >
-            {identities
-              .filter((keypair) => fingerprints.get(keypair) !== undefined)
-              .map((keypair, index) => (
-                <MenuItem key={index} value={fingerprints.get(keypair)}>
-                  {fingerprints.get(keypair).slice(0, 8)}
-                </MenuItem>
-              ))}
+            {identities.map((identity, index) => (
+              <MenuItem key={index} value={identity.fingerprint}>
+                {identity.fingerprint.slice(0, 8)}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         <Stack

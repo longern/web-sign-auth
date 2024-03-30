@@ -7,6 +7,7 @@ import React, {
   TextField,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { Identity } from "./useIdentities";
 
 function IdentityDialog({
   identity,
@@ -14,7 +15,7 @@ function IdentityDialog({
   open,
   onClose,
 }: {
-  identity: CryptoKeyPair | null;
+  identity: Identity | null;
   identityMetadata?: { name: string; id: string };
   open: boolean;
   onClose: () => void;
@@ -59,13 +60,22 @@ function IdentityDialog({
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>{identityMetadata?.name ?? "Identity"}</DialogTitle>
-      <DialogContent sx={{ "& > *:not(:last-child)": { marginBottom: 3 } }}>
+      <DialogContent sx={{ "& > *:not(:last-child)": { marginBottom: 4 } }}>
         <TextField
           variant="standard"
           label="Name"
           value={name}
           onChange={(event) => setName(event.target.value)}
           fullWidth
+        />
+        <TextField
+          label="Fingerprint"
+          helperText="Base58-encoded SHA-256 hash of the public key"
+          value={identity?.fingerprint ?? ""}
+          fullWidth
+          InputProps={{
+            readOnly: true,
+          }}
         />
         <TextField
           label="Public Key"

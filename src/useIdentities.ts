@@ -3,8 +3,13 @@ import base58 from "bs58";
 
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils";
 
-export function createIdentity() {
-  return crypto.subtle.generateKey(
+export interface Identity extends CryptoKeyPair {
+  name?: string;
+  fingerprint: string;
+}
+
+export async function createIdentity(): Promise<Identity> {
+  const { publicKey, privateKey } = await crypto.subtle.generateKey(
     {
       name: "ECDSA",
       namedCurve: "P-256",
@@ -12,53 +17,71 @@ export function createIdentity() {
     true,
     ["sign", "verify"]
   );
+  const publicKeyData = await crypto.subtle.exportKey("spki", publicKey);
+  const hash = await crypto.subtle.digest("SHA-256", publicKeyData);
+  const fingerprint = base58.encode(new Uint8Array(hash));
+  return { publicKey, privateKey, fingerprint };
 }
 
-async function stringifyKeyPair(keyPair: CryptoKeyPair) {
+async function stringifyIdentity(identity: Identity) {
   const [privateKeyData, publicKeyData] = await Promise.all([
-    crypto.subtle.exportKey("pkcs8", keyPair.privateKey),
-    crypto.subtle.exportKey("spki", keyPair.publicKey),
+    crypto.subtle.exportKey("pkcs8", identity.privateKey),
+    crypto.subtle.exportKey("spki", identity.publicKey),
   ]);
   const privateKey = arrayBufferToBase64(privateKeyData);
   const publicKey = arrayBufferToBase64(publicKeyData);
-  return { privateKey, publicKey };
+  return { ...identity, privateKey, publicKey };
 }
 
-async function parseKeyPair(keyPair: {
+async function parseIdentity(identity: {
+  name?: string;
+  fingerprint: string;
   privateKey: string;
   publicKey: string;
-}) {
+}): Promise<Identity> {
+  const {
+    name,
+    fingerprint,
+    privateKey: privateKeyBase64,
+    publicKey: publicKeyBase64,
+  } = identity;
+  const publicKeyData = base64ToArrayBuffer(publicKeyBase64);
+  const hash = await crypto.subtle.digest("SHA-256", publicKeyData);
+  const fingerprintCheck = base58.encode(new Uint8Array(hash));
+  if (fingerprint !== fingerprintCheck) {
+    throw new Error("Fingerprint mismatch");
+  }
+  const privateKeyData = base64ToArrayBuffer(privateKeyBase64);
   const [privateKey, publicKey] = await Promise.all([
     crypto.subtle.importKey(
       "pkcs8",
-      base64ToArrayBuffer(keyPair.privateKey),
+      privateKeyData,
       { name: "ECDSA", namedCurve: "P-256" },
       true,
       ["sign"]
     ),
     crypto.subtle.importKey(
       "spki",
-      base64ToArrayBuffer(keyPair.publicKey),
+      publicKeyData,
       { name: "ECDSA", namedCurve: "P-256" },
       true,
       ["verify"]
     ),
   ]);
-  return { privateKey, publicKey } as CryptoKeyPair;
+  return { name, fingerprint, privateKey, publicKey };
 }
 
 const IDENTITIES_KEY = "webSignAuthIdentities";
 
 export function useIdentities() {
-  const [identities, setIdentities] = useState<CryptoKeyPair[]>(null);
-  const [fingerprints, setFingerprints] = useState<Map<CryptoKeyPair, string>>(
-    new Map()
-  );
+  const [identities, setIdentities] = useState<Identity[]>(null);
 
   useEffect(() => {
     const identities = window.localStorage.getItem(IDENTITIES_KEY);
     if (identities) {
-      Promise.all(JSON.parse(identities).map(parseKeyPair)).then(setIdentities);
+      Promise.all(JSON.parse(identities).map(parseIdentity)).then(
+        setIdentities
+      );
     } else {
       setIdentities([]);
     }
@@ -68,36 +91,10 @@ export function useIdentities() {
     if (identities === null) return;
     if (identities.length === 0) window.localStorage.removeItem(IDENTITIES_KEY);
     else
-      Promise.all(identities.map(stringifyKeyPair)).then((identities) => {
+      Promise.all(identities.map(stringifyIdentity)).then((identities) => {
         window.localStorage.setItem(IDENTITIES_KEY, JSON.stringify(identities));
       });
   }, [identities]);
 
-  useEffect(() => {
-    if (identities === null) return;
-    Promise.all(
-      identities.map(async (identity) => {
-        const privateKeyData = await crypto.subtle.exportKey(
-          "pkcs8",
-          identity.privateKey
-        );
-        const privateKey = await crypto.subtle.digest(
-          "SHA-256",
-          privateKeyData
-        );
-        return base58.encode(new Uint8Array(privateKey));
-      })
-    ).then((fingerprints) => {
-      setFingerprints(
-        new Map(
-          fingerprints.map((fingerprint, index) => [
-            identities[index],
-            fingerprint,
-          ])
-        )
-      );
-    });
-  }, [identities]);
-
-  return { identities, fingerprints, setIdentities };
+  return { identities, setIdentities };
 }

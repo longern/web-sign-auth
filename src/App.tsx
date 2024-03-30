@@ -13,12 +13,11 @@ import {
   Snackbar,
   Stack,
   ThemeProvider,
-  Tooltip,
   Typography,
   createTheme,
 } from "@mui/material";
 import React, { useCallback } from "react";
-import { createIdentity, useIdentities } from "./useIdentities";
+import { Identity, createIdentity, useIdentities } from "./useIdentities";
 import Auth from "./Auth";
 import IdentityDialog from "./IdentityDialog";
 
@@ -78,10 +77,11 @@ function authenticate() {
 }
 
 function IdentityList() {
-  const { identities, fingerprints, setIdentities } = useIdentities();
+  const { identities, setIdentities } = useIdentities();
   const [message, setMessage] = React.useState<string | null>(null);
-  const [currentIdentity, setCurrentIdentity] =
-    React.useState<CryptoKeyPair | null>(null);
+  const [currentIdentity, setCurrentIdentity] = React.useState<Identity | null>(
+    null
+  );
   const [showIdentityDialog, setShowIdentityDialog] = React.useState(false);
 
   const handleTryIdentity = useCallback(() => {
@@ -115,21 +115,21 @@ function IdentityList() {
         <Typography variant="h5">Identities</Typography>
         {identities.length > 0 && (
           <List>
-            {identities.map((keypair, index) => (
+            {identities.map((identity, index) => (
               <React.Fragment key={index}>
                 <ListItem disablePadding>
-                  <Tooltip title={fingerprints.get(keypair)}>
-                    <ListItemButton
-                      onClick={() => {
-                        setCurrentIdentity(keypair);
-                        setShowIdentityDialog(true);
-                      }}
-                    >
-                      <ListItemText
-                        primary={fingerprints.get(keypair)?.slice(0, 8)}
-                      />
-                    </ListItemButton>
-                  </Tooltip>
+                  <ListItemButton
+                    onClick={() => {
+                      setCurrentIdentity(identity);
+                      setShowIdentityDialog(true);
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        identity.name || identity.fingerprint.slice(0, 8)
+                      }
+                    />
+                  </ListItemButton>
                 </ListItem>
                 <Divider />
               </React.Fragment>
