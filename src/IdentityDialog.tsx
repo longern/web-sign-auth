@@ -14,11 +14,13 @@ function IdentityDialog({
   identityMetadata,
   open,
   onClose,
+  onDelete,
 }: {
   identity: Identity | null;
   identityMetadata?: { name: string; id: string };
   open: boolean;
   onClose: () => void;
+  onDelete: () => void;
 }) {
   const [publicKey, setPublicKey] = useState<string>("");
   const [privateKey, setPrivateKey] = useState<string>("");
@@ -97,6 +99,9 @@ function IdentityDialog({
         />
       </DialogContent>
       <DialogActions>
+        <Button color="error" onClick={onDelete}>
+          Delete
+        </Button>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
