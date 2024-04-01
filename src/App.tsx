@@ -1,28 +1,15 @@
 import {
-  Button,
   Card,
-  CardActions,
-  CircularProgress,
   Container,
   CssBaseline,
-  Divider,
   GlobalStyles,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Snackbar,
-  Stack,
   ThemeProvider,
-  Typography,
   createTheme,
 } from "@mui/material";
-import React, { useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import React from "react";
 
-import { Identity, createIdentity, useIdentities } from "./useIdentities";
 import Auth from "./Auth";
-import IdentityDialog from "./IdentityDialog";
+import IdentitiesList from "./IdentitiesList";
 
 const theme = createTheme({
   palette: {
@@ -36,180 +23,6 @@ const theme = createTheme({
     },
   },
 });
-
-function authenticate() {
-  return new Promise<{ name: string; fingerprint: string }>(
-    (resolve, reject) => {
-      const childWindow = window.open(window.location.href);
-      if (!childWindow) return;
-      const challenge = crypto.getRandomValues(new Uint8Array(32)).buffer;
-      const interval = setInterval(() => {
-        if (childWindow.closed) {
-          clearInterval(interval);
-          reject(new Error("Window closed"));
-        }
-        childWindow.postMessage(
-          { type: "auth", challenge, origin: window.location.origin },
-          "*"
-        );
-      }, 500);
-      childWindow.onmessage = async (event) => {
-        if (event.data.type === "signature") {
-          clearInterval(interval);
-          const {
-            name,
-            fingerprint,
-            signature,
-            publicKey,
-          }: {
-            name: string;
-            fingerprint: string;
-            signature: ArrayBuffer;
-            publicKey: CryptoKey;
-          } = event.data;
-          const valid = await crypto.subtle.verify(
-            { name: "ECDSA", hash: "SHA-256" },
-            publicKey,
-            signature,
-            challenge
-          );
-          if (valid) {
-            resolve({ name, fingerprint });
-          } else {
-            reject(new Error("Invalid signature"));
-          }
-        }
-      };
-
-      setTimeout(() => {
-        if (childWindow.closed) return;
-        childWindow.close();
-        clearInterval(interval);
-        reject(new Error("Timeout"));
-      }, 60000);
-    }
-  );
-}
-
-function IdentityList() {
-  const { identities, setIdentities } = useIdentities();
-  const [message, setMessage] = React.useState<string | null>(null);
-  const [currentIdentity, setCurrentIdentity] = React.useState<Identity | null>(
-    null
-  );
-  const [showIdentityDialog, setShowIdentityDialog] = React.useState(false);
-
-  const { t } = useTranslation();
-
-  const handleTryIdentity = useCallback(() => {
-    authenticate()
-      .then(({ name, fingerprint }) => {
-        setMessage(
-          `${t("Authenticated as")} ${name || fingerprint.slice(0, 8)}`
-        );
-      })
-      .catch((error) => {
-        setMessage(error.message);
-      });
-  }, [t]);
-
-  return identities === null ? (
-    <CircularProgress />
-  ) : (
-    <Stack
-      sx={{
-        height: "100%",
-        flexDirection: { lg: "row" },
-        alignItems: "center",
-        "& > *": {
-          lg: { flex: "1 0" },
-        },
-      }}
-    >
-      <Stack sx={{ alignItems: "center", marginY: 4, gap: 2 }}>
-        <img src="/logo192.png" alt="Logo" width="96" height="96" />
-        <Typography variant="h4">Web Sign Auth</Typography>
-      </Stack>
-      <Stack sx={{ width: "100%", flexGrow: 1 }}>
-        <Typography variant="h5" gutterBottom>
-          {t("Identities")}
-        </Typography>
-        {identities.length > 0 && (
-          <List sx={{ flexGrow: 1, overflowY: "auto" }}>
-            {identities.map((identity, index) => (
-              <React.Fragment key={index}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    sx={{ minHeight: 60 }}
-                    onClick={() => {
-                      setCurrentIdentity(identity);
-                      setShowIdentityDialog(true);
-                    }}
-                  >
-                    <ListItemText
-                      primary={
-                        identity.name || identity.fingerprint.slice(0, 8)
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
-                <Divider />
-              </React.Fragment>
-            ))}
-          </List>
-        )}
-        <CardActions sx={{ marginTop: 4, justifyContent: "space-between" }}>
-          <Button
-            size="large"
-            onClick={() =>
-              createIdentity().then((identity) =>
-                setIdentities((identities) => [...identities, identity])
-              )
-            }
-          >
-            {t("Create identity")}
-          </Button>
-          <Button
-            variant="contained"
-            size="large"
-            disabled={identities.length === 0}
-            onClick={handleTryIdentity}
-          >
-            Try Identity
-          </Button>
-          <Snackbar
-            open={message !== null}
-            autoHideDuration={5000}
-            onClose={() => setMessage(null)}
-            message={message}
-          />
-        </CardActions>
-      </Stack>
-      <IdentityDialog
-        identity={currentIdentity}
-        open={showIdentityDialog}
-        onClose={() => setShowIdentityDialog(false)}
-        onChange={(identity) => {
-          setIdentities((identities) =>
-            identities.map((item) =>
-              item.fingerprint === identity.fingerprint ? identity : item
-            )
-          );
-          setShowIdentityDialog(false);
-        }}
-        onDelete={() => {
-          setIdentities((identities) =>
-            identities.filter(
-              (identity) =>
-                identity.fingerprint !== currentIdentity?.fingerprint
-            )
-          );
-          setShowIdentityDialog(false);
-        }}
-      />
-    </Stack>
-  );
-}
 
 const globalStyles = (
   <GlobalStyles
@@ -240,7 +53,8 @@ function App() {
         <Card
           sx={{
             borderRadius: { xs: 0, lg: 4 },
-            height: { xs: "100%", lg: "384px" },
+            height: { xs: "100%", lg: "auto" },
+            minHeight: { lg: 384 },
             padding: { xs: 3, lg: 4 },
           }}
           elevation={0}
@@ -248,7 +62,7 @@ function App() {
           {window?.opener || window?.parent !== window?.self ? (
             <Auth />
           ) : (
-            <IdentityList />
+            <IdentitiesList />
           )}
         </Card>
       </Container>

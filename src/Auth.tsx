@@ -142,7 +142,8 @@ function Auth() {
       >
         {identities.length === 0 ? (
           <Box>
-            You have no identities yet.<Button>{t("Create identity")}</Button>
+            {t("no-identities")}
+            <Button sx={{ marginLeft: 1 }}>{t("Create identity")}</Button>
           </Box>
         ) : !selectingIdentity ? (
           <React.Fragment>
