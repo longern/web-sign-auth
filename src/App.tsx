@@ -6,6 +6,7 @@ import {
   Container,
   CssBaseline,
   Divider,
+  GlobalStyles,
   List,
   ListItem,
   ListItemButton,
@@ -129,14 +130,17 @@ function IdentityList() {
         <img src="/logo192.png" alt="Logo" width="96" height="96" />
         <Typography variant="h4">Web Sign Auth</Typography>
       </Stack>
-      <Stack sx={{ width: "100%" }}>
-        <Typography variant="h5">Identities</Typography>
+      <Stack sx={{ width: "100%", flexGrow: 1 }}>
+        <Typography variant="h5" gutterBottom>
+          {t("Identities")}
+        </Typography>
         {identities.length > 0 && (
-          <List>
+          <List sx={{ flexGrow: 1, overflowY: "auto" }}>
             {identities.map((identity, index) => (
               <React.Fragment key={index}>
                 <ListItem disablePadding>
                   <ListItemButton
+                    sx={{ minHeight: 60 }}
                     onClick={() => {
                       setCurrentIdentity(identity);
                       setShowIdentityDialog(true);
@@ -154,7 +158,7 @@ function IdentityList() {
             ))}
           </List>
         )}
-        <CardActions sx={{ marginTop: 4 }}>
+        <CardActions sx={{ marginTop: 4, justifyContent: "space-between" }}>
           <Button
             size="large"
             onClick={() =>
@@ -207,15 +211,27 @@ function IdentityList() {
   );
 }
 
+const globalStyles = (
+  <GlobalStyles
+    styles={{
+      "html, body, #root": {
+        height: "100%",
+      },
+    }}
+  />
+);
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {globalStyles}
       <Container
         maxWidth="lg"
         sx={{
           padding: { xs: 0, lg: 4 },
-          minHeight: "100vh",
+          height: "100%",
+          overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -224,7 +240,7 @@ function App() {
         <Card
           sx={{
             borderRadius: { xs: 0, lg: 4 },
-            height: { xs: "100vh", lg: "384px" },
+            height: { xs: "100%", lg: "384px" },
             padding: { xs: 3, lg: 4 },
           }}
           elevation={0}
