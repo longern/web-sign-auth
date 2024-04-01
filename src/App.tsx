@@ -167,6 +167,14 @@ function IdentityList() {
         identity={currentIdentity}
         open={showIdentityDialog}
         onClose={() => setShowIdentityDialog(false)}
+        onChange={(identity) => {
+          setIdentities((identities) =>
+            identities.map((item) =>
+              item.fingerprint === identity.fingerprint ? identity : item
+            )
+          );
+          setShowIdentityDialog(false);
+        }}
         onDelete={() => {
           setIdentities((identities) =>
             identities.filter(

@@ -7,19 +7,21 @@ import React, {
   TextField,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+
 import { Identity } from "./useIdentities";
+import { privateKeyToPublicKey } from "./utils";
 
 function IdentityDialog({
   identity,
-  identityMetadata,
   open,
   onClose,
+  onChange,
   onDelete,
 }: {
   identity: Identity | null;
-  identityMetadata?: { name: string; id: string };
   open: boolean;
   onClose: () => void;
+  onChange: (identity: Identity) => void;
   onDelete: () => void;
 }) {
   const [publicKey, setPublicKey] = useState<string>("");
@@ -28,40 +30,31 @@ function IdentityDialog({
 
   useEffect(() => {
     if (!open || !identity?.privateKey) return;
+    setName(identity.name ?? "");
     (async () => {
       const privateKeyData = await crypto.subtle.exportKey(
         "pkcs8",
         identity.privateKey
       );
-      const privateKey = btoa(
+      const privateKeyBase64 = btoa(
         String.fromCharCode(...new Uint8Array(privateKeyData))
       );
-      setPrivateKey(privateKey);
-    })();
-  }, [open, identity?.privateKey]);
+      setPrivateKey(privateKeyBase64);
 
-  useEffect(() => {
-    if (!open || !identity?.publicKey) return;
-    (async () => {
-      const publicKeyData = await crypto.subtle.exportKey(
-        "spki",
-        identity.publicKey
-      );
-      const publicKey = btoa(
+      const publicKey = await privateKeyToPublicKey(identity.privateKey);
+      const publicKeyData = await crypto.subtle.exportKey("spki", publicKey);
+      const publicKeyBase64 = btoa(
         String.fromCharCode(...new Uint8Array(publicKeyData))
       );
-      setPublicKey(publicKey);
+      setPublicKey(publicKeyBase64);
     })();
-  }, [open, identity?.publicKey]);
-
-  useEffect(() => {
-    if (!open) return;
-    setName(identityMetadata?.name ?? "");
-  }, [open, identityMetadata?.name]);
+  }, [open, identity]);
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>{identityMetadata?.name ?? "Identity"}</DialogTitle>
+      <DialogTitle>
+        {"Identity " + (identity?.name || identity?.fingerprint.slice(0, 8))}
+      </DialogTitle>
       <DialogContent sx={{ "& > *:not(:last-child)": { marginBottom: 4 } }}>
         <TextField
           variant="standard"
@@ -103,6 +96,12 @@ function IdentityDialog({
           Delete
         </Button>
         <Button onClick={onClose}>Close</Button>
+        <Button
+          variant="contained"
+          onClick={() => onChange({ ...identity, name })}
+        >
+          Save
+        </Button>
       </DialogActions>
     </Dialog>
   );

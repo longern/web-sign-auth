@@ -11,7 +11,9 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+
 import { Identity, useIdentities } from "./useIdentities";
+import { privateKeyToPublicKey } from "./utils";
 
 type ParentMessage = {
   type: "auth";
@@ -30,6 +32,7 @@ function Auth() {
 
   const handleSign = useCallback(async () => {
     if (currentIdentity === null || challengeRef.current === null) return;
+    const publicKey = await privateKeyToPublicKey(currentIdentity.privateKey);
     const signature = await crypto.subtle.sign(
       { name: "ECDSA", hash: "SHA-256" },
       currentIdentity.privateKey,
@@ -40,7 +43,7 @@ function Auth() {
         type: "signature",
         fingerprint: currentIdentity.fingerprint,
         signature,
-        publicKey: currentIdentity.publicKey,
+        publicKey,
       },
       origin,
       [signature]
