@@ -17,6 +17,8 @@ import {
   createTheme,
 } from "@mui/material";
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
+
 import { Identity, createIdentity, useIdentities } from "./useIdentities";
 import Auth from "./Auth";
 import IdentityDialog from "./IdentityDialog";
@@ -35,45 +37,57 @@ const theme = createTheme({
 });
 
 function authenticate() {
-  return new Promise<string>((resolve, reject) => {
-    const childWindow = window.open(window.location.href);
-    if (!childWindow) return;
-    const challenge = crypto.getRandomValues(new Uint8Array(32)).buffer;
-    const interval = setInterval(() => {
-      if (childWindow.closed) {
-        clearInterval(interval);
-        reject(new Error("Window closed"));
-      }
-      childWindow.postMessage(
-        { type: "auth", challenge, origin: window.location.origin },
-        "*"
-      );
-    }, 500);
-    childWindow.onmessage = async (event) => {
-      if (event.data.type === "signature") {
-        clearInterval(interval);
-        const { fingerprint, signature, publicKey } = event.data;
-        const valid = await crypto.subtle.verify(
-          { name: "ECDSA", hash: "SHA-256" },
-          publicKey,
-          signature,
-          challenge
-        );
-        if (valid) {
-          resolve(fingerprint);
-        } else {
-          reject(new Error("Invalid signature"));
+  return new Promise<{ name: string; fingerprint: string }>(
+    (resolve, reject) => {
+      const childWindow = window.open(window.location.href);
+      if (!childWindow) return;
+      const challenge = crypto.getRandomValues(new Uint8Array(32)).buffer;
+      const interval = setInterval(() => {
+        if (childWindow.closed) {
+          clearInterval(interval);
+          reject(new Error("Window closed"));
         }
-      }
-    };
+        childWindow.postMessage(
+          { type: "auth", challenge, origin: window.location.origin },
+          "*"
+        );
+      }, 500);
+      childWindow.onmessage = async (event) => {
+        if (event.data.type === "signature") {
+          clearInterval(interval);
+          const {
+            name,
+            fingerprint,
+            signature,
+            publicKey,
+          }: {
+            name: string;
+            fingerprint: string;
+            signature: ArrayBuffer;
+            publicKey: CryptoKey;
+          } = event.data;
+          const valid = await crypto.subtle.verify(
+            { name: "ECDSA", hash: "SHA-256" },
+            publicKey,
+            signature,
+            challenge
+          );
+          if (valid) {
+            resolve({ name, fingerprint });
+          } else {
+            reject(new Error("Invalid signature"));
+          }
+        }
+      };
 
-    setTimeout(() => {
-      if (childWindow.closed) return;
-      childWindow.close();
-      clearInterval(interval);
-      reject(new Error("Timeout"));
-    }, 60000);
-  });
+      setTimeout(() => {
+        if (childWindow.closed) return;
+        childWindow.close();
+        clearInterval(interval);
+        reject(new Error("Timeout"));
+      }, 60000);
+    }
+  );
 }
 
 function IdentityList() {
@@ -84,15 +98,19 @@ function IdentityList() {
   );
   const [showIdentityDialog, setShowIdentityDialog] = React.useState(false);
 
+  const { t } = useTranslation();
+
   const handleTryIdentity = useCallback(() => {
     authenticate()
-      .then((fingerprint) => {
-        setMessage(`Authenticated as ${fingerprint.slice(0, 8)}`);
+      .then(({ name, fingerprint }) => {
+        setMessage(
+          `${t("Authenticated as")} ${name || fingerprint.slice(0, 8)}`
+        );
       })
       .catch((error) => {
         setMessage(error.message);
       });
-  }, []);
+  }, [t]);
 
   return identities === null ? (
     <CircularProgress />
@@ -145,7 +163,7 @@ function IdentityList() {
               )
             }
           >
-            Create Identity
+            {t("Create identity")}
           </Button>
           <Button
             variant="contained"
