@@ -18,7 +18,8 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
-import { createIdentity, useIdentities } from "./useIdentities";
+import { useIdentities } from "./useIdentities";
+import CreateIdentityDialog from "./CreateIdentityDialog";
 
 function authenticate() {
   return new Promise<{ name: string; fingerprint: string }>(
@@ -74,8 +75,10 @@ function authenticate() {
 }
 
 function IdentitiesList() {
-  const { identities, setIdentities } = useIdentities();
+  const { identities } = useIdentities();
   const [message, setMessage] = React.useState<string | null>(null);
+  const [createIdentityDialogOpen, setCreateIdentityDialogOpen] =
+    React.useState(false);
 
   const { t } = useTranslation();
 
@@ -124,10 +127,10 @@ function IdentitiesList() {
             }
           >
             <AlertTitle>{t("Identity created!")}</AlertTitle>
-            <Box>{t("can-sign")}</Box>
+            <Box>{t("canSign")}</Box>
           </Alert>
         ) : (
-          <Alert severity="info">{t("no-identities")}</Alert>
+          <Alert severity="info">{t("noIdentities")}</Alert>
         )}
         <Typography variant="h5" sx={{ marginTop: 2, marginBottom: 1 }}>
           {t("Identities")}
@@ -161,11 +164,7 @@ function IdentitiesList() {
           <Button
             variant="outlined"
             size="large"
-            onClick={() =>
-              createIdentity().then((identity) =>
-                setIdentities((identities) => [...identities, identity])
-              )
-            }
+            onClick={() => setCreateIdentityDialogOpen(true)}
           >
             {t("Create identity")}
           </Button>
@@ -176,6 +175,10 @@ function IdentitiesList() {
         autoHideDuration={5000}
         onClose={() => setMessage(null)}
         message={message}
+      />
+      <CreateIdentityDialog
+        open={createIdentityDialogOpen}
+        onClose={() => setCreateIdentityDialogOpen(false)}
       />
     </Stack>
   );

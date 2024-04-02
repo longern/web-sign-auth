@@ -7,7 +7,9 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  Grid,
+  Divider,
+  List,
+  ListItem,
   Stack,
   TextField,
   Typography,
@@ -15,6 +17,42 @@ import {
 
 import { Identity, useIdentities } from "./useIdentities";
 import { secp256k1 } from "@noble/curves/secp256k1";
+
+function IdentityItem({
+  label,
+  value,
+  endAdornment,
+}: {
+  label: React.ReactNode;
+  value: React.ReactNode;
+  endAdornment?: React.ReactNode;
+}) {
+  return (
+    <React.Fragment>
+      <ListItem sx={{ paddingY: 2 }}>
+        <Stack
+          direction={{ xs: "column", lg: "row" }}
+          columnGap={3}
+          sx={{ width: "100%", alignItems: { lg: "center" } }}
+        >
+          <Typography variant="subtitle2" sx={{ flexBasis: { lg: "156px" } }}>
+            {label}
+          </Typography>
+          <Typography
+            sx={{
+              overflowWrap: "anywhere",
+              wordBreak: "break-all",
+            }}
+          >
+            {value}
+          </Typography>
+        </Stack>
+        {endAdornment}
+      </ListItem>
+      <Divider component="li" />
+    </React.Fragment>
+  );
+}
 
 function IdentityDetail({ fingerprint }: { fingerprint: string }) {
   const { t } = useTranslation();
@@ -54,80 +92,69 @@ function IdentityDetail({ fingerprint }: { fingerprint: string }) {
   ) : identity === undefined ? (
     t("Identity not found")
   ) : (
-    <Stack spacing={2}>
-      <Grid container>
-        <Grid item xs={12} lg={4}>
-          <Typography variant="h6">{t("Name")}</Typography>
-        </Grid>
-        <Grid item xs={12} lg={8}>
-          {editingName ? (
-            <Stack direction="row" spacing={1}>
-              <TextField
-                variant="standard"
-                hiddenLabel
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <Button
-                onClick={() => {
-                  setEditingName(false);
-                  const newIdentity = { ...identity, name: name || undefined };
-                  setIdentity(newIdentity);
-                  setIdentities((identities) =>
-                    identities.map((i) => (i === identity ? newIdentity : i))
-                  );
-                }}
-              >
-                {t("Save")}
-              </Button>
-            </Stack>
-          ) : (
-            <React.Fragment>
-              {identity.name ? (
-                identity.name
-              ) : (
-                <Typography component={"span"} color="textSecondary">
-                  {t("Unnamed")}
-                </Typography>
-              )}
-              <Button
-                sx={{ marginLeft: 1 }}
-                onClick={() => {
-                  setEditingName(true);
-                  setName(identity.name || "");
-                }}
-              >
-                {t("Edit")}
-              </Button>
-            </React.Fragment>
-          )}
-        </Grid>
-        <Grid item xs={12} lg={4}>
-          <Typography variant="h6" marginTop={2}>
-            {t("Fingerprint")}
-          </Typography>
-        </Grid>
-        <Grid item xs={12} lg={8}>
-          {identity.fingerprint}
-        </Grid>
-        <Grid item xs={12} lg={4}>
-          <Typography variant="h6" marginTop={2}>
-            {t("Public key")}
-          </Typography>
-        </Grid>
-        <Grid item xs={12} lg={8} sx={{ overflowWrap: "anywhere" }}>
-          {btoa(String.fromCharCode(...publicKey))}
-        </Grid>
-        <Grid item xs={12} lg={4}>
-          <Typography variant="h6" marginTop={2}>
-            {t("Private key")}
-          </Typography>
-        </Grid>
-        <Grid item xs={12} lg={8} sx={{ overflowWrap: "anywhere" }}>
-          {btoa(String.fromCharCode(...identity.privateKey))}
-        </Grid>
-      </Grid>
-      <Box>
+    <Stack>
+      <Typography variant="h5">{t("Your identity")}</Typography>
+      <List>
+        <IdentityItem
+          label={t("Name")}
+          value={
+            editingName ? (
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  variant="standard"
+                  hiddenLabel
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <Button
+                  onClick={() => {
+                    setEditingName(false);
+                    const newIdentity = {
+                      ...identity,
+                      name: name || undefined,
+                    };
+                    setIdentity(newIdentity);
+                    setIdentities((identities) =>
+                      identities.map((i) => (i === identity ? newIdentity : i))
+                    );
+                  }}
+                >
+                  {t("Save")}
+                </Button>
+              </Stack>
+            ) : (
+              <React.Fragment>
+                {identity.name ? (
+                  identity.name
+                ) : (
+                  <Typography component={"span"} color="textSecondary">
+                    {t("Unnamed")}
+                  </Typography>
+                )}
+                <Button
+                  sx={{ marginLeft: 1 }}
+                  onClick={() => {
+                    setEditingName(true);
+                    setName(identity.name || "");
+                  }}
+                >
+                  {t("Edit")}
+                </Button>
+              </React.Fragment>
+            )
+          }
+        />
+        <IdentityItem label={t("Fingerprint")} value={identity.fingerprint} />
+        <IdentityItem
+          label={t("Public key")}
+          value={btoa(String.fromCharCode(...publicKey))}
+        />
+        <IdentityItem
+          label={t("Private key")}
+          value={btoa(String.fromCharCode(...identity.privateKey))}
+        />
+      </List>
+      <Box sx={{ marginTop: 4 }}>
         <Button
           variant="outlined"
           size="large"

@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { Identity, useIdentities } from "./useIdentities";
+import CreateIdentityDialog from "./CreateIdentityDialog";
 
 type ParentMessage = {
   type: "auth";
@@ -31,6 +32,8 @@ function Auth() {
   const { identities } = useIdentities();
   const [currentIdentity, setCurrentIdentity] = useState<Identity | null>(null);
   const [selectingIdentity, setSelectingIdentity] = useState(false);
+  const [createIdentityDialogOpen, setCreateIdentityDialogOpen] =
+    useState(false);
 
   const { t } = useTranslation();
 
@@ -124,7 +127,7 @@ function Auth() {
         </Stack>
         <ListItemText
           primary={origin}
-          secondary={t("wants-access") + " " + (username ?? "")}
+          secondary={t("wantsAccess") + " " + (username ?? "")}
         />
       </Box>
       <Stack
@@ -139,8 +142,13 @@ function Auth() {
       >
         {identities.length === 0 ? (
           <Box>
-            {t("no-identities")}
-            <Button sx={{ marginLeft: 1 }}>{t("Create identity")}</Button>
+            {t("noIdentities")}
+            <Button
+              sx={{ marginLeft: 1 }}
+              onClick={() => setCreateIdentityDialogOpen(true)}
+            >
+              {t("Create identity")}
+            </Button>
           </Box>
         ) : !selectingIdentity ? (
           <React.Fragment>
@@ -206,7 +214,12 @@ function Auth() {
             </FormControl>
             <Stack direction="row" spacing={4}>
               <Box sx={{ flexGrow: 1 }}></Box>
-              <Button>{t("Create identity")}</Button>
+              <Button
+                size="large"
+                onClick={() => setCreateIdentityDialogOpen(true)}
+              >
+                {t("Create identity")}
+              </Button>
               <Button
                 variant="contained"
                 size="large"
@@ -218,6 +231,10 @@ function Auth() {
           </React.Fragment>
         )}
       </Stack>
+      <CreateIdentityDialog
+        open={createIdentityDialogOpen}
+        onClose={() => setCreateIdentityDialogOpen(false)}
+      />
     </Stack>
   );
 }
