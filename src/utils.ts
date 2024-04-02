@@ -1,17 +1,18 @@
 import base58 from "bs58";
 
 export function base64ToArrayBuffer(base64: string) {
-  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)).buffer;
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 }
 
-export function arrayBufferToBase64(buffer: ArrayBuffer) {
-  return btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+export function arrayBufferToBase64(buffer: Uint8Array) {
+  return btoa(String.fromCharCode.apply(null, buffer));
 }
 
-export async function base58Fingerprint(publicKey: CryptoKey): Promise<string> {
-  const publicKeyData = await crypto.subtle.exportKey("spki", publicKey);
-  const hash = await crypto.subtle.digest("SHA-256", publicKeyData);
-  const fingerprint = base58.encode(new Uint8Array(hash));
+export async function base58Fingerprint(
+  publicKey: Uint8Array
+): Promise<string> {
+  const hash = await crypto.subtle.digest("SHA-256", publicKey.buffer);
+  const fingerprint = base58.encode(new Uint8Array(hash.slice(0, 20)));
   return fingerprint;
 }
 

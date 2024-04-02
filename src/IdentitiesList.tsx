@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { Identity, createIdentity, useIdentities } from "./useIdentities";
 import IdentityDialog from "./IdentityDialog";
@@ -25,7 +26,7 @@ function authenticate() {
     (resolve, reject) => {
       const childWindow = window.open(window.location.href);
       if (!childWindow) return;
-      const challenge = crypto.getRandomValues(new Uint8Array(32)).buffer;
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
       const interval = setInterval(() => {
         if (childWindow.closed) {
           clearInterval(interval);
@@ -47,14 +48,13 @@ function authenticate() {
           }: {
             name: string;
             fingerprint: string;
-            signature: ArrayBuffer;
-            publicKey: CryptoKey;
+            signature: Uint8Array;
+            publicKey: Uint8Array;
           } = event.data;
-          const valid = await crypto.subtle.verify(
-            { name: "ECDSA", hash: "SHA-256" },
-            publicKey,
-            signature,
-            challenge
+          const valid = secp256k1.verify(
+            secp256k1.Signature.fromCompact(signature),
+            new Uint8Array(challenge),
+            publicKey
           );
           if (valid) {
             resolve({ name, fingerprint });

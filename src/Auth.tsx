@@ -12,9 +12,9 @@ import {
 } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { Identity, useIdentities } from "./useIdentities";
-import { privateKeyToPublicKey } from "./utils";
 
 type ParentMessage = {
   type: "auth";
@@ -36,12 +36,10 @@ function Auth() {
 
   const handleSign = useCallback(async () => {
     if (currentIdentity === null || challengeRef.current === null) return;
-    const publicKey = await privateKeyToPublicKey(currentIdentity.privateKey);
-    const signature = await crypto.subtle.sign(
-      { name: "ECDSA", hash: "SHA-256" },
-      currentIdentity.privateKey,
-      challengeRef.current
-    );
+    const publicKey = secp256k1.getPublicKey(currentIdentity.privateKey);
+    const signature = secp256k1
+      .sign(new Uint8Array(challengeRef.current), currentIdentity.privateKey)
+      .toCompactRawBytes();
     window.parent.postMessage(
       {
         type: "signature",
@@ -50,8 +48,7 @@ function Auth() {
         signature,
         publicKey,
       },
-      origin,
-      [signature]
+      origin
     );
     setTimeout(() => setSuccess(true), 4);
     window.close();

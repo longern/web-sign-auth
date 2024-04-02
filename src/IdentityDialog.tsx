@@ -7,9 +7,9 @@ import React, {
   TextField,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { Identity } from "./useIdentities";
-import { privateKeyToPublicKey } from "./utils";
 
 function IdentityDialog({
   identity,
@@ -31,23 +31,12 @@ function IdentityDialog({
   useEffect(() => {
     if (!open || !identity?.privateKey) return;
     setName(identity.name ?? "");
-    (async () => {
-      const privateKeyData = await crypto.subtle.exportKey(
-        "pkcs8",
-        identity.privateKey
-      );
-      const privateKeyBase64 = btoa(
-        String.fromCharCode(...new Uint8Array(privateKeyData))
-      );
-      setPrivateKey(privateKeyBase64);
+    const privateKeyBase64 = btoa(String.fromCharCode(...identity.privateKey));
+    setPrivateKey(privateKeyBase64);
 
-      const publicKey = await privateKeyToPublicKey(identity.privateKey);
-      const publicKeyData = await crypto.subtle.exportKey("spki", publicKey);
-      const publicKeyBase64 = btoa(
-        String.fromCharCode(...new Uint8Array(publicKeyData))
-      );
-      setPublicKey(publicKeyBase64);
-    })();
+    const publicKey = secp256k1.getPublicKey(identity.privateKey);
+    const publicKeyBase64 = btoa(String.fromCharCode(...publicKey));
+    setPublicKey(publicKeyBase64);
   }, [open, identity]);
 
   return (

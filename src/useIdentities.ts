@@ -1,38 +1,30 @@
 import { useEffect, useState } from "react";
+import { secp256k1 } from "@noble/curves/secp256k1";
 
 import {
   arrayBufferToBase64,
   base58Fingerprint,
   base64ToArrayBuffer,
-  privateKeyToPublicKey,
 } from "./utils";
 
 export interface Identity {
   name?: string;
   fingerprint: string;
-  privateKey: CryptoKey;
+  privateKey: Uint8Array;
 }
 
 export async function createIdentity(): Promise<Identity> {
-  const { publicKey, privateKey } = await crypto.subtle.generateKey(
-    {
-      name: "ECDSA",
-      namedCurve: "P-256",
-    },
-    true,
-    ["sign", "verify"]
-  );
+  const privateKey = crypto.getRandomValues(new Uint8Array(32));
+  const publicKey = secp256k1.getPublicKey(privateKey);
   const fingerprint = await base58Fingerprint(publicKey);
   return { privateKey, fingerprint };
 }
 
-async function stringifyIdentity(identity: Identity) {
-  const privateKeyData = await crypto.subtle.exportKey(
-    "pkcs8",
-    identity.privateKey
-  );
-  const privateKey = arrayBufferToBase64(privateKeyData);
-  return { name: identity.name, privateKey };
+function jsonBinaryReplacer(_: string, value: any) {
+  if (value instanceof Uint8Array) {
+    return arrayBufferToBase64(value);
+  }
+  return value;
 }
 
 async function parseIdentity(identity: {
@@ -40,15 +32,8 @@ async function parseIdentity(identity: {
   privateKey: string;
 }): Promise<Identity> {
   const { name, privateKey: privateKeyBase64 } = identity;
-  const privateKeyData = base64ToArrayBuffer(privateKeyBase64);
-  const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
-    privateKeyData,
-    { name: "ECDSA", namedCurve: "P-256" },
-    true,
-    ["sign"]
-  );
-  const publicKey = await privateKeyToPublicKey(privateKey);
+  const privateKey = base64ToArrayBuffer(privateKeyBase64);
+  const publicKey = secp256k1.getPublicKey(privateKey);
   const fingerprint = await base58Fingerprint(publicKey);
   return { name, fingerprint, privateKey };
 }
@@ -73,9 +58,10 @@ export function useIdentities() {
     if (identities === null) return;
     if (identities.length === 0) window.localStorage.removeItem(IDENTITIES_KEY);
     else
-      Promise.all(identities.map(stringifyIdentity)).then((identities) => {
-        window.localStorage.setItem(IDENTITIES_KEY, JSON.stringify(identities));
-      });
+      window.localStorage.setItem(
+        IDENTITIES_KEY,
+        JSON.stringify(identities, jsonBinaryReplacer)
+      );
   }, [identities]);
 
   return { identities, setIdentities };
