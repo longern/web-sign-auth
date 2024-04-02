@@ -24,7 +24,12 @@ const resources = {
       "Try it": "Try it",
       "Use another identity": "Use another identity",
 
+      beforeCreating: "Before you create an identity, please note that:",
       canSign: "Now you can sign as the identities created on this device.",
+      doNotShare:
+        "Do not share your private key with anyone. Whoever has your private key can permanently control your account.",
+      properlyStore:
+        "Properly store your private key. Once lost, it can never be recovered.",
       noIdentities: "No identities found on this device.",
       wantsAccess: "wants to access your identity",
     },
@@ -51,8 +56,12 @@ const resources = {
       "Try it": "试一试",
       "Use another identity": "使用其他身份",
 
+      beforeCreating: "在创建身份之前，请注意：",
       canSign: "现在您可以使用此设备上创建的身份进行签名。",
+      doNotShare:
+        "不要与任何人分享您的私钥。拥有您的私钥的人可以永久获得您账户的控制权。",
       noIdentities: "此设备上未找到任何身份。",
+      properlyStore: "妥善保管您的私钥。一旦丢失，将永远无法找回。",
       wantsAccess: "请求访问您的身份",
     },
   },

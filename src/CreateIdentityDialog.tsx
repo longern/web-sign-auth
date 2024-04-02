@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-} from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { createIdentity, useIdentities } from "./useIdentities";
 import { useTranslation } from "react-i18next";
 
@@ -22,7 +16,11 @@ function CreateIdentityDialog({
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogContent>
-        <Alert severity="warning"></Alert>
+        {t("beforeCreating")}
+        <ul style={{ paddingLeft: 20 }}>
+          <li>{t("doNotShare")}</li>
+          <li>{t("properlyStore")}</li>
+        </ul>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t("Cancel")}</Button>
@@ -38,7 +36,7 @@ function CreateIdentityDialog({
             })
           }
         >
-          {t("Ok")}
+          {t("Create identity")}
         </Button>
       </DialogActions>
     </Dialog>
