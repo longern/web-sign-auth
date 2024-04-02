@@ -18,8 +18,7 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
-import { Identity, createIdentity, useIdentities } from "./useIdentities";
-import IdentityDialog from "./IdentityDialog";
+import { createIdentity, useIdentities } from "./useIdentities";
 
 function authenticate() {
   return new Promise<{ name: string; fingerprint: string }>(
@@ -77,10 +76,6 @@ function authenticate() {
 function IdentitiesList() {
   const { identities, setIdentities } = useIdentities();
   const [message, setMessage] = React.useState<string | null>(null);
-  const [currentIdentity, setCurrentIdentity] = React.useState<Identity | null>(
-    null
-  );
-  const [showIdentityDialog, setShowIdentityDialog] = React.useState(false);
 
   const { t } = useTranslation();
 
@@ -143,11 +138,8 @@ function IdentitiesList() {
               <React.Fragment key={index}>
                 <ListItem disablePadding>
                   <ListItemButton
+                    href={`/${identity.fingerprint}`}
                     sx={{ minHeight: 60 }}
-                    onClick={() => {
-                      setCurrentIdentity(identity);
-                      setShowIdentityDialog(true);
-                    }}
                   >
                     <ListItemText
                       primary={
@@ -184,28 +176,6 @@ function IdentitiesList() {
         autoHideDuration={5000}
         onClose={() => setMessage(null)}
         message={message}
-      />
-      <IdentityDialog
-        identity={currentIdentity}
-        open={showIdentityDialog}
-        onClose={() => setShowIdentityDialog(false)}
-        onChange={(identity) => {
-          setIdentities((identities) =>
-            identities.map((item) =>
-              item.fingerprint === identity.fingerprint ? identity : item
-            )
-          );
-          setShowIdentityDialog(false);
-        }}
-        onDelete={() => {
-          setIdentities((identities) =>
-            identities.filter(
-              (identity) =>
-                identity.fingerprint !== currentIdentity?.fingerprint
-            )
-          );
-          setShowIdentityDialog(false);
-        }}
       />
     </Stack>
   );

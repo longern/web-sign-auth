@@ -10,6 +10,7 @@ import React from "react";
 
 import Auth from "./Auth";
 import IdentitiesList from "./IdentitiesList";
+import IdentityDetail from "./IdentityDetail";
 
 const theme = createTheme({
   palette: {
@@ -61,6 +62,10 @@ function App() {
         >
           {window?.opener || window?.parent !== window?.self ? (
             <Auth />
+          ) : window.location.pathname.match(/[0-9A-Za-z]{8,26}$/) ? (
+            <IdentityDetail
+              fingerprint={window.location.pathname.split("/").pop() || ""}
+            />
           ) : (
             <IdentitiesList />
           )}
