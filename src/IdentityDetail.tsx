@@ -1,23 +1,108 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router";
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
+  DialogTitle,
   Divider,
+  IconButton,
   List,
   ListItem,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from "@mui/material";
+import {
+  Close as CloseIcon,
+  Visibility as VisibilityIcon,
+} from "@mui/icons-material";
 import { secp256k1 } from "@noble/curves/secp256k1";
-import { useNavigate, useParams } from "react-router";
+import base58 from "bs58";
 
 import { Identity, useIdentities } from "./useIdentities";
+
+function QRCode({ text }: { text: string }) {
+  const imgRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    import("qrcode").then(async ({ toDataURL }) => {
+      const url = await toDataURL(text);
+      imgRef.current.src = url;
+    });
+  }, [text]);
+  return <img ref={imgRef} alt="QR code" />;
+}
+
+function PrivateKeyDialog({
+  open,
+  onClose,
+  privateKey,
+}: {
+  open: boolean;
+  onClose: () => void;
+  privateKey: Uint8Array;
+}) {
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
+  const [tab, setTab] = useState<"base64" | "base58" | "qrcode" | "mnemonic">(
+    "base64"
+  );
+  const { t } = useTranslation();
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <IconButton
+        onClick={onClose}
+        sx={{ position: "absolute", right: 8, top: 8 }}
+      >
+        <CloseIcon />
+      </IconButton>
+      <DialogTitle>{t("Private key")}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2}>
+          <Alert severity="warning">{t("doNotShare")}</Alert>
+          {!showPrivateKey ? (
+            <Button variant="contained" onClick={() => setShowPrivateKey(true)}>
+              {t("Show private key")}
+            </Button>
+          ) : (
+            <React.Fragment>
+              <Tabs value={tab} onChange={(_, value) => setTab(value)}>
+                <Tab value="base64" label="Base64" />
+                <Tab value="base58" label="Base58" />
+                <Tab value="mnemonic" label={t("Mnemonic")} />
+                <Tab value="qrcode" label={t("QR code")} />
+              </Tabs>
+              <Box sx={{ wordBreak: "break-all" }}>
+                {tab === "base64" ? (
+                  btoa(String.fromCharCode(...privateKey))
+                ) : tab === "base58" ? (
+                  base58.encode(privateKey)
+                ) : tab === "qrcode" ? (
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <QRCode text={btoa(String.fromCharCode(...privateKey))} />
+                  </Box>
+                ) : null}
+              </Box>
+            </React.Fragment>
+          )}
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function IdentityItem({
   label,
@@ -61,6 +146,7 @@ function IdentityDetail() {
   const { identities, setIdentities } = useIdentities();
   const [identity, setIdentity] = useState<Identity | undefined | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState<string>("");
   const navigate = useNavigate();
@@ -154,7 +240,15 @@ function IdentityDetail() {
         />
         <IdentityItem
           label={t("Private key")}
-          value={btoa(String.fromCharCode(...identity.privateKey))}
+          value="********"
+          endAdornment={
+            <IconButton
+              sx={{ marginY: -1, marginLeft: 1 }}
+              onClick={() => setShowPrivateKey(true)}
+            >
+              <VisibilityIcon />
+            </IconButton>
+          }
         />
       </List>
       <Box sx={{ marginTop: 4 }}>
@@ -185,6 +279,11 @@ function IdentityDetail() {
           </Button>
         </DialogActions>
       </Dialog>
+      <PrivateKeyDialog
+        open={showPrivateKey}
+        onClose={() => setShowPrivateKey(false)}
+        privateKey={identity.privateKey}
+      />
     </Stack>
   );
 }
