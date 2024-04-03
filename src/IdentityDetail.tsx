@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import {
   Close as CloseIcon,
+  Share as ShareIcon,
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import { secp256k1 } from "@noble/curves/secp256k1";
@@ -256,6 +257,20 @@ function IdentityDetail() {
         <IdentityItem
           label={t("Public key")}
           value={btoa(String.fromCharCode(...publicKey))}
+          endAdornment={
+            navigator.share && (
+              <IconButton
+                sx={{ marginY: -1, marginLeft: 1 }}
+                onClick={() =>
+                  navigator.share({
+                    text: btoa(String.fromCharCode(...publicKey)),
+                  })
+                }
+              >
+                <ShareIcon />
+              </IconButton>
+            )
+          }
         />
         <IdentityItem
           label={t("Private key")}
