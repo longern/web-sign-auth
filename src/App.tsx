@@ -7,10 +7,10 @@ import {
   createTheme,
 } from "@mui/material";
 import React from "react";
+import { RouterProvider } from "react-router";
+import { createBrowserRouter } from "react-router-dom";
 
 import Auth from "./Auth";
-import IdentitiesList from "./IdentitiesList";
-import IdentityDetail from "./IdentityDetail";
 
 const theme = createTheme({
   palette: {
@@ -24,6 +24,23 @@ const theme = createTheme({
     },
   },
 });
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    lazy: () =>
+      import("./IdentitiesList").then((module) => ({
+        Component: module.default,
+      })),
+  },
+  {
+    path: "/:fingerprint",
+    lazy: () =>
+      import("./IdentityDetail").then((module) => ({
+        Component: module.default,
+      })),
+  },
+]);
 
 const globalStyles = (
   <GlobalStyles
@@ -62,12 +79,8 @@ function App() {
         >
           {window?.opener || window?.parent !== window?.self ? (
             <Auth />
-          ) : window.location.pathname.match(/[0-9A-Za-z]{8,26}$/) ? (
-            <IdentityDetail
-              fingerprint={window.location.pathname.split("/").pop() || ""}
-            />
           ) : (
-            <IdentitiesList />
+            <RouterProvider router={router} />
           )}
         </Card>
       </Container>

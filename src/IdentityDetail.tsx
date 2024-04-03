@@ -14,9 +14,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { secp256k1 } from "@noble/curves/secp256k1";
+import { useParams } from "react-router";
 
 import { Identity, useIdentities } from "./useIdentities";
-import { secp256k1 } from "@noble/curves/secp256k1";
 
 function IdentityItem({
   label,
@@ -54,7 +55,8 @@ function IdentityItem({
   );
 }
 
-function IdentityDetail({ fingerprint }: { fingerprint: string }) {
+function IdentityDetail() {
+  const { fingerprint } = useParams<{ fingerprint: string }>();
   const { t } = useTranslation();
   const { identities, setIdentities } = useIdentities();
   const [identity, setIdentity] = useState<Identity | undefined | null>(null);

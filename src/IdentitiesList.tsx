@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { Link as RouterLink } from "react-router-dom";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { useIdentities } from "./useIdentities";
@@ -141,7 +142,8 @@ function IdentitiesList() {
               <React.Fragment key={index}>
                 <ListItem disablePadding>
                   <ListItemButton
-                    href={`/${identity.fingerprint}`}
+                    component={RouterLink}
+                    to={`/${identity.fingerprint}`}
                     sx={{ minHeight: 60 }}
                   >
                     <ListItemText

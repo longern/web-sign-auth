@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { secp256k1 } from "@noble/curves/secp256k1";
 
 import {
   arrayBufferToBase64,
   base58Fingerprint,
   base64ToArrayBuffer,
 } from "./utils";
+
+const { secp256k1 } = await import("@noble/curves/secp256k1");
 
 export interface Identity {
   name?: string;
@@ -14,6 +15,7 @@ export interface Identity {
 }
 
 export async function createIdentity(): Promise<Identity> {
+  const { secp256k1 } = await import("@noble/curves/secp256k1");
   const privateKey = crypto.getRandomValues(new Uint8Array(32));
   const publicKey = secp256k1.getPublicKey(privateKey);
   const fingerprint = await base58Fingerprint(publicKey);

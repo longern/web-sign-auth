@@ -12,10 +12,11 @@ import {
 } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { Identity, useIdentities } from "./useIdentities";
 import CreateIdentityDialog from "./CreateIdentityDialog";
+
+const { secp256k1 } = await import("@noble/curves/secp256k1");
 
 type ParentMessage = {
   type: "auth";
