@@ -21,6 +21,7 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { useIdentities } from "./useIdentities";
 import CreateIdentityDialog from "./CreateIdentityDialog";
+import ImportIdentityDialog from "./ImportIdentityDialog";
 
 function authenticate() {
   return new Promise<{ name: string; fingerprint: string }>(
@@ -79,6 +80,8 @@ function IdentitiesList() {
   const { identities } = useIdentities();
   const [message, setMessage] = React.useState<string | null>(null);
   const [createIdentityDialogOpen, setCreateIdentityDialogOpen] =
+    React.useState(false);
+  const [importIdentityDialogOpen, setImportIdentityDialogOpen] =
     React.useState(false);
 
   const { t } = useTranslation();
@@ -157,18 +160,19 @@ function IdentitiesList() {
               </React.Fragment>
             ))}
         </List>
-        <CardActions
-          sx={{
-            marginTop: 1,
-            justifyContent: "space-between",
-          }}
-        >
+        <CardActions sx={{ marginTop: 1 }}>
           <Button
             variant="outlined"
             size="large"
             onClick={() => setCreateIdentityDialogOpen(true)}
           >
             {t("Create identity")}
+          </Button>
+          <Button
+            size="large"
+            onClick={() => setImportIdentityDialogOpen(true)}
+          >
+            {t("Import existing identity")}
           </Button>
         </CardActions>
       </Stack>
@@ -181,6 +185,10 @@ function IdentitiesList() {
       <CreateIdentityDialog
         open={createIdentityDialogOpen}
         onClose={() => setCreateIdentityDialogOpen(false)}
+      />
+      <ImportIdentityDialog
+        open={importIdentityDialogOpen}
+        onClose={() => setImportIdentityDialogOpen(false)}
       />
     </Stack>
   );

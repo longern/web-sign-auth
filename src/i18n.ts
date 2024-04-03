@@ -16,6 +16,8 @@ const resources = {
       Identities: "Identities",
       Identity: "Identity",
       "Identity created!": "Identity created!",
+      Import: "Import",
+      "Import existing identity": "Import existing identity",
       Mnemonic: "Mnemonic",
       Name: "Name",
       Ok: "Ok",
@@ -34,6 +36,7 @@ const resources = {
       canSign: "Now you can sign as the identities created on this device.",
       doNotShare:
         "Do not share your private key with anyone. Whoever has your private key can permanently control your account.",
+      pastePrivateKey: "Paste your base64-encoded private key here.",
       properlyStore:
         "Properly store your private key. Once lost, it can never be recovered.",
       noIdentities: "No identities found on this device.",
@@ -54,6 +57,8 @@ const resources = {
       Identities: "身份",
       Identity: "身份",
       "Identity created!": "身份已创建！",
+      Import: "导入",
+      "Import existing identity": "导入现有身份",
       Mnemonic: "助记词",
       Name: "名称",
       Ok: "确定",
@@ -73,6 +78,7 @@ const resources = {
       doNotShare:
         "不要与任何人分享您的私钥。拥有您的私钥的人可以永久获得您账户的控制权。",
       noIdentities: "此设备上未找到任何身份。",
+      pastePrivateKey: "在此处粘贴您的私钥（base64 编码）。",
       properlyStore: "妥善保管您的私钥。一旦丢失，将永远无法找回。",
       wantsAccess: "请求访问您的身份",
     },
