@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { secp256k1 } from "@noble/curves/secp256k1";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import { Identity, useIdentities } from "./useIdentities";
 
@@ -63,6 +63,7 @@ function IdentityDetail() {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState<string>("");
+  const navigate = useNavigate();
 
   const publicKey = useMemo(() => {
     if (!identity) return new Uint8Array();
@@ -71,10 +72,10 @@ function IdentityDetail() {
   }, [identity]);
 
   const handleDelete = () => {
-    if (identity === null) return;
+    if (!identity) return;
     setIdentities(identities.filter((i) => i !== identity));
     setTimeout(() => {
-      window.location.href = "/";
+      navigate("/");
     }, 4);
   };
 

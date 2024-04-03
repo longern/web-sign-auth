@@ -14,12 +14,24 @@ export interface Identity {
   privateKey: Uint8Array;
 }
 
-export async function createIdentity(): Promise<Identity> {
-  const { secp256k1 } = await import("@noble/curves/secp256k1");
-  const privateKey = crypto.getRandomValues(new Uint8Array(32));
-  const publicKey = secp256k1.getPublicKey(privateKey);
-  const fingerprint = await base58Fingerprint(publicKey);
-  return { privateKey, fingerprint };
+export async function createIdentity(options?: {
+  name?: string;
+  prefix?: string;
+  signal?: AbortSignal;
+}): Promise<Identity> {
+  options = options || {};
+  if (options.prefix && !options.prefix.match(/^[1-9A-HJ-NP-Za-km-z]{1,3}$/)) {
+    throw new Error("Invalid prefix");
+  }
+  while (true) {
+    const privateKey = crypto.getRandomValues(new Uint8Array(32));
+    const publicKey = secp256k1.getPublicKey(privateKey);
+    const fingerprint = await base58Fingerprint(publicKey);
+    if (options.signal?.aborted) throw new Error("Operation aborted");
+    if (!options.prefix || fingerprint.startsWith(options.prefix)) {
+      return { name: options.name, fingerprint, privateKey };
+    }
+  }
 }
 
 function jsonBinaryReplacer(_: string, value: any) {
