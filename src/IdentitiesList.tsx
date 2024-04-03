@@ -32,6 +32,7 @@ function authenticate() {
       const interval = setInterval(() => {
         if (childWindow.closed) {
           clearInterval(interval);
+          window.removeEventListener("message", messageHandler);
           reject(new Error("Window closed"));
         }
         childWindow.postMessage(
@@ -39,9 +40,12 @@ function authenticate() {
           "*"
         );
       }, 500);
-      childWindow.onmessage = async (event) => {
+
+      const messageHandler = async (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
         if (event.data.type === "signature") {
           clearInterval(interval);
+          window.removeEventListener("message", messageHandler);
           const {
             name,
             fingerprint,
@@ -66,10 +70,13 @@ function authenticate() {
         }
       };
 
+      window.addEventListener("message", messageHandler);
+
       setTimeout(() => {
         if (childWindow.closed) return;
         childWindow.close();
         clearInterval(interval);
+        window.removeEventListener("message", messageHandler);
         reject(new Error("Timeout"));
       }, 60000);
     }

@@ -11,6 +11,7 @@ import { RouterProvider } from "react-router";
 import { createBrowserRouter } from "react-router-dom";
 
 import Auth from "./Auth";
+import "./i18n";
 
 const theme = createTheme({
   palette: {
@@ -77,11 +78,7 @@ function App() {
           }}
           elevation={0}
         >
-          {window?.opener || window?.parent !== window?.self ? (
-            <Auth />
-          ) : (
-            <RouterProvider router={router} />
-          )}
+          {window?.opener ? <Auth /> : <RouterProvider router={router} />}
         </Card>
       </Container>
     </ThemeProvider>

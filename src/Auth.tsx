@@ -44,7 +44,7 @@ function Auth() {
     const signature = secp256k1
       .sign(new Uint8Array(challengeRef.current), currentIdentity.privateKey)
       .toCompactRawBytes();
-    window.parent.postMessage(
+    window.opener.postMessage(
       {
         type: "signature",
         name: currentIdentity.name,
