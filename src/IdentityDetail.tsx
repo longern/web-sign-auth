@@ -34,11 +34,11 @@ function QRCode({ text }: { text: string }) {
   const imgRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
     import("qrcode").then(async ({ toDataURL }) => {
-      const url = await toDataURL(text);
+      const url = await toDataURL(text, { width: 192 });
       imgRef.current.src = url;
     });
   }, [text]);
-  return <img ref={imgRef} alt="QR code" />;
+  return <img ref={imgRef} alt="QR code" width={192} height={192} />;
 }
 
 function PrivateKeyDialog({
@@ -55,7 +55,16 @@ function PrivateKeyDialog({
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      onTransitionExited={() => {
+        if (!open) {
+          setShowPrivateKey(false);
+          setTab("base64");
+        }
+      }}
+    >
       <IconButton
         onClick={onClose}
         sx={{ position: "absolute", right: 8, top: 8 }}
@@ -67,7 +76,11 @@ function PrivateKeyDialog({
         <Stack spacing={2}>
           <Alert severity="warning">{t("doNotShare")}</Alert>
           {!showPrivateKey ? (
-            <Button variant="contained" onClick={() => setShowPrivateKey(true)}>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => setShowPrivateKey(true)}
+            >
               {t("Show private key")}
             </Button>
           ) : (
@@ -85,6 +98,7 @@ function PrivateKeyDialog({
                     </Card>
                     <Button
                       variant="contained"
+                      size="large"
                       disabled={!navigator.clipboard}
                       onClick={() =>
                         navigator.clipboard.writeText(
@@ -100,7 +114,7 @@ function PrivateKeyDialog({
                     <Card variant="outlined" sx={{ padding: 2 }}>
                       {t("Coming soon")}
                     </Card>
-                    <Button variant="contained">
+                    <Button variant="contained" size="large">
                       {t("Copy to clipboard")}
                     </Button>
                   </Stack>
