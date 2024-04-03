@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  Card,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -25,7 +26,6 @@ import {
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import { secp256k1 } from "@noble/curves/secp256k1";
-import base58 from "bs58";
 
 import { Identity, useIdentities } from "./useIdentities";
 
@@ -50,9 +50,7 @@ function PrivateKeyDialog({
   privateKey: Uint8Array;
 }) {
   const [showPrivateKey, setShowPrivateKey] = useState(false);
-  const [tab, setTab] = useState<"base64" | "base58" | "qrcode" | "mnemonic">(
-    "base64"
-  );
+  const [tab, setTab] = useState<"base64" | "qrcode" | "mnemonic">("base64");
   const { t } = useTranslation();
 
   return (
@@ -75,15 +73,36 @@ function PrivateKeyDialog({
             <React.Fragment>
               <Tabs value={tab} onChange={(_, value) => setTab(value)}>
                 <Tab value="base64" label="Base64" />
-                <Tab value="base58" label="Base58" />
                 <Tab value="mnemonic" label={t("Mnemonic")} />
                 <Tab value="qrcode" label={t("QR code")} />
               </Tabs>
               <Box sx={{ wordBreak: "break-all" }}>
                 {tab === "base64" ? (
-                  btoa(String.fromCharCode(...privateKey))
-                ) : tab === "base58" ? (
-                  base58.encode(privateKey)
+                  <Stack spacing={2}>
+                    <Card variant="outlined" sx={{ padding: 2 }}>
+                      {btoa(String.fromCharCode(...privateKey))}
+                    </Card>
+                    <Button
+                      variant="contained"
+                      disabled={!navigator.clipboard}
+                      onClick={() =>
+                        navigator.clipboard.writeText(
+                          btoa(String.fromCharCode(...privateKey))
+                        )
+                      }
+                    >
+                      {t("Copy to clipboard")}
+                    </Button>
+                  </Stack>
+                ) : tab === "mnemonic" ? (
+                  <Stack spacing={2}>
+                    <Card variant="outlined" sx={{ padding: 2 }}>
+                      {t("Coming soon")}
+                    </Card>
+                    <Button variant="contained">
+                      {t("Copy to clipboard")}
+                    </Button>
+                  </Stack>
                 ) : tab === "qrcode" ? (
                   <Box
                     sx={{
