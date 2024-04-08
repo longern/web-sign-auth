@@ -31,6 +31,62 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 
 import { Identity, useIdentities } from "./useIdentities";
 
+function Mnemonic({ privateKey }: { privateKey: Uint8Array }) {
+  const [mnemonic, setMnemonic] = useState<string>("");
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    fetch(
+      "https://cdn.jsdelivr.net/npm/bip39@3.1.0/src/wordlists/english.json"
+    ).then(async (res) => {
+      const wordlist = await res.json();
+      const hash = await crypto.subtle.digest("SHA-256", privateKey);
+      const checksum = new Uint8Array(hash.slice(0, 2));
+      const bits = new Uint8Array(privateKey.length + checksum.length);
+      bits.set(privateKey);
+      bits.set(checksum, privateKey.length);
+      const checksumBitsLength = Math.floor((privateKey.length * 8) / 32);
+      const bitsString = Array.from(bits)
+        .map((byte) => byte.toString(2).padStart(8, "0"))
+        .join("")
+        .slice(0, privateKey.length * 8 + checksumBitsLength);
+      const mnemonic: string[] = [];
+      for (let i = 0; i < bitsString.length; i += 11) {
+        const index = parseInt(bitsString.slice(i, i + 11), 2);
+        mnemonic.push(wordlist[index]);
+      }
+      setMnemonic(mnemonic.join(" "));
+    });
+  }, [privateKey]);
+
+  return (
+    <Stack spacing={2}>
+      <Card variant="outlined" sx={{ padding: 2 }}>
+        {mnemonic || (
+          <Box
+            sx={{
+              height: "3lh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        )}
+      </Card>
+      <Button
+        variant="contained"
+        size="large"
+        disabled={!navigator.clipboard}
+        onClick={() => navigator.clipboard.writeText(mnemonic)}
+      >
+        {t("Copy to clipboard")}
+      </Button>
+    </Stack>
+  );
+}
+
 function QRCode({ text }: { text: string }) {
   const imgRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
@@ -111,14 +167,7 @@ function PrivateKeyDialog({
                     </Button>
                   </Stack>
                 ) : tab === "mnemonic" ? (
-                  <Stack spacing={2}>
-                    <Card variant="outlined" sx={{ padding: 2 }}>
-                      {t("Coming soon")}
-                    </Card>
-                    <Button variant="contained" size="large">
-                      {t("Copy to clipboard")}
-                    </Button>
-                  </Stack>
+                  <Mnemonic privateKey={privateKey} />
                 ) : tab === "qrcode" ? (
                   <Box
                     sx={{
@@ -159,14 +208,14 @@ function IdentityItem({
           <Typography variant="subtitle2" sx={{ flexBasis: { lg: "156px" } }}>
             {label}
           </Typography>
-          <Typography
+          <Box
             sx={{
               overflowWrap: "anywhere",
               wordBreak: "break-all",
             }}
           >
             {value}
-          </Typography>
+          </Box>
         </Stack>
         {endAdornment}
       </ListItem>
