@@ -41,13 +41,29 @@ function Auth() {
   const handleSign = useCallback(async () => {
     if (currentIdentity === null || challengeRef.current === null) return;
     const publicKey = secp256k1.getPublicKey(currentIdentity.privateKey);
+    const clientData = {
+      challenge: btoa(
+        String.fromCharCode(...new Uint8Array(challengeRef.current))
+      ),
+      origin,
+      timestamp: Date.now(),
+    };
+    const clientDataJSON = JSON.stringify(clientData);
+    const digest = new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(clientDataJSON)
+      )
+    );
     const signature = secp256k1
-      .sign(new Uint8Array(challengeRef.current), currentIdentity.privateKey)
+      .sign(digest, currentIdentity.privateKey)
       .toCompactRawBytes();
+
     window.opener.postMessage(
       {
         type: "signature",
         name: currentIdentity.name,
+        clientDataJSON,
         fingerprint: currentIdentity.fingerprint,
         signature,
         publicKey,
@@ -68,6 +84,7 @@ function Auth() {
         setUsername(event.data.username);
         challengeRef.current = event.data.challenge;
       }
+      window.removeEventListener("message", handleMessage);
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);

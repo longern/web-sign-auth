@@ -53,13 +53,27 @@ function authenticate() {
             publicKey,
           }: {
             name: string;
+            clientDataJSON: string;
             fingerprint: string;
             signature: Uint8Array;
             publicKey: Uint8Array;
           } = event.data;
+          const clientData = JSON.parse(event.data.clientDataJSON);
+          if (
+            atob(clientData.challenge) !== String.fromCharCode(...challenge)
+          ) {
+            reject(new Error("Invalid challenge"));
+            return;
+          }
+          const digest = new Uint8Array(
+            await crypto.subtle.digest(
+              "SHA-256",
+              new TextEncoder().encode(event.data.clientDataJSON)
+            )
+          );
           const valid = secp256k1.verify(
             secp256k1.Signature.fromCompact(signature),
-            new Uint8Array(challenge),
+            digest,
             publicKey
           );
           if (valid) {
