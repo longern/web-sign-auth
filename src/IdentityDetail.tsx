@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import {
   Close as CloseIcon,
+  NavigateBefore as NavigateBeforeIcon,
   Share as ShareIcon,
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
@@ -215,8 +216,13 @@ function IdentityDetail() {
   ) : identity === undefined ? (
     t("Identity not found")
   ) : (
-    <Stack>
-      <Typography variant="h5">{t("Your identity")}</Typography>
+    <React.Fragment>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <IconButton onClick={() => navigate("/")}>
+          <NavigateBeforeIcon />
+        </IconButton>
+        <Typography variant="h5">{t("Your identity")}</Typography>
+      </Stack>
       <List>
         <IdentityItem
           label={t("Name")}
@@ -332,7 +338,7 @@ function IdentityDetail() {
         onClose={() => setShowPrivateKey(false)}
         privateKey={identity.privateKey}
       />
-    </Stack>
+    </React.Fragment>
   );
 }
 
