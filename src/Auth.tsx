@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Card,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -126,32 +127,47 @@ function Auth() {
     )
   ) : (
     <Stack
-      spacing={2}
       sx={{
         height: "100%",
         flexDirection: { xs: "column", lg: "row" },
         alignItems: "center",
-        gap: 2,
+        gap: 4,
         "& > *": {
-          sx: { flex: 0 },
-          lg: { flex: "1 0" },
+          xs: { width: "100%" },
+          lg: { flex: "0 1 50%", minWidth: 0 },
         },
       }}
     >
-      <Box sx={{ width: "100%" }}>
-        <Stack sx={{ alignItems: "center", marginY: 4, gap: 2 }}>
-          <img src="/logo192.png" alt="Logo" width="96" height="96" />
-          <Typography variant="h4">Web Sign Auth</Typography>
+      <Stack sx={{ height: "100%", minHeight: 0 }}>
+        <Stack
+          direction="row"
+          sx={{ alignItems: "center", marginBottom: 4, gap: 2 }}
+        >
+          <img src="/logo192.png" alt="Logo" width="48" height="48" />
+          <Typography variant="h5">Web Sign Auth</Typography>
         </Stack>
-        <ListItemText
-          primary={origin}
-          secondary={t("wantsAccess") + " " + (username ?? "")}
-        />
-      </Box>
+        <Typography variant="h6" gutterBottom>
+          {t("aboutToSign")}
+        </Typography>
+        <Card
+          variant="outlined"
+          sx={{
+            flexGrow: 1,
+            padding: 2,
+            overflowWrap: "break-word",
+            overflowY: "auto",
+          }}
+        >
+          <Box>{t("grantAccessIdentity")}</Box>
+          <Box>{origin}</Box>
+          <Box>{username}</Box>
+        </Card>
+      </Stack>
       <Stack
-        spacing={4}
+        spacing={3}
         sx={{
-          width: "100%",
+          minHeight: 160,
+          flexShrink: 0,
           "& .MuiTypography-root": {
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -170,7 +186,7 @@ function Auth() {
           </Box>
         ) : !selectingIdentity ? (
           <React.Fragment>
-            <Typography variant="h5">{t("Sign as")}</Typography>
+            <Typography variant="h6">{t("Sign as")}</Typography>
             {currentIdentity.name ? (
               <ListItemText
                 primary={currentIdentity.name}
