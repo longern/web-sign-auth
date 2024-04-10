@@ -23,10 +23,10 @@ import { useIdentities } from "./useIdentities";
 import CreateIdentityDialog from "./CreateIdentityDialog";
 import ImportIdentityDialog from "./ImportIdentityDialog";
 
-function authenticate() {
+function authenticate(providerOrigin: string) {
   return new Promise<{ name: string; fingerprint: string }>(
     (resolve, reject) => {
-      const childWindow = window.open(window.location.href);
+      const childWindow = window.open(providerOrigin);
       if (!childWindow) return;
       const challenge = crypto.getRandomValues(new Uint8Array(32));
       const interval = setInterval(() => {
@@ -42,7 +42,7 @@ function authenticate() {
       }, 500);
 
       const messageHandler = async (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
+        if (event.origin !== providerOrigin) return;
         if (event.data.type === "signature") {
           clearInterval(interval);
           window.removeEventListener("message", messageHandler);
@@ -108,7 +108,7 @@ function IdentitiesList() {
   const { t } = useTranslation();
 
   const handleTryIdentity = useCallback(() => {
-    authenticate()
+    authenticate(window.location.origin)
       .then(({ name, fingerprint }) => {
         setMessage(
           `${t("Authenticated as")} ${name || fingerprint.slice(0, 8)}`
