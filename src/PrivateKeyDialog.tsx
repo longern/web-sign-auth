@@ -73,14 +73,32 @@ function Mnemonic({ privateKey }: { privateKey: Uint8Array }) {
 }
 
 function QRCode({ text }: { text: string }) {
+  const [loading, setLoading] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
     import("qrcode").then(async ({ toDataURL }) => {
       const url = await toDataURL(text, { width: 192 });
       imgRef.current.src = url;
+      setLoading(false);
     });
   }, [text]);
-  return <img ref={imgRef} alt="QR code" width={192} height={192} />;
+  return (
+    <Card
+      variant="outlined"
+      sx={{
+        width: 192,
+        height: 192,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      {loading && <CircularProgress />}
+      <Box sx={{ display: loading ? "none" : "flex" }}>
+        <img ref={imgRef} alt="QR code" width={192} height={192} />
+      </Box>
+    </Card>
+  );
 }
 
 function PrivateKeyDialog({
