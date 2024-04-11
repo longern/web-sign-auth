@@ -29,6 +29,8 @@ const resources = {
       Sign: "Sign",
       "Sign as": "Sign as",
       "Try it": "Try it",
+      "Try remote identity": "Try remote identity",
+      "Use another device": "Use another device",
       "Use another identity": "Use another identity",
       "Your identity": "Your identity",
 
@@ -39,9 +41,12 @@ const resources = {
         "Do not share your private key with anyone. Whoever has your private key can permanently control your account.",
       grantAccessIdentity: "Grant this origin access to your identity",
       pastePrivateKey: "Paste your base64-encoded private key here.",
+      operateOnAnotherDevice: "Please operate on another device.",
       properlyStore:
         "Properly store your private key. Once lost, it can never be recovered.",
       noIdentities: "No identities found on this device.",
+      scanQRCodeToSign:
+        "Scan the QR code below with your other device to sign.",
     },
   },
   "zh-CN": {
@@ -71,6 +76,8 @@ const resources = {
       Sign: "签名",
       "Sign as": "以此身份签名",
       "Try it": "试一试",
+      "Try remote identity": "尝试远程身份",
+      "Use another device": "使用其他设备",
       "Use another identity": "使用其他身份",
       "Your identity": "您的身份",
 
@@ -81,8 +88,10 @@ const resources = {
         "不要与任何人分享您的私钥。拥有您的私钥的人可以永久获得您账户的控制权。",
       grantAccessIdentity: "授权此源访问您的身份",
       noIdentities: "此设备上未找到任何身份。",
+      operateOnAnotherDevice: "请在另一台设备上操作。",
       pastePrivateKey: "在此处粘贴您的私钥（base64 编码）。",
       properlyStore: "妥善保管您的私钥。一旦丢失，将永远无法找回。",
+      scanQRCodeToSign: "使用您的其他设备扫描下面的二维码进行签名。",
     },
   },
 };

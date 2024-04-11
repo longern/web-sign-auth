@@ -53,6 +53,9 @@ const globalStyles = (
   />
 );
 
+const isAuthPage =
+  window.opener || new URLSearchParams(window.location.search).has("channel");
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -78,7 +81,7 @@ function App() {
           }}
           elevation={0}
         >
-          {window?.opener ? <Auth /> : <RouterProvider router={router} />}
+          {isAuthPage ? <Auth /> : <RouterProvider router={router} />}
         </Card>
       </Container>
     </ThemeProvider>

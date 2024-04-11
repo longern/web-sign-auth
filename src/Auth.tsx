@@ -16,26 +16,121 @@ import { useTranslation } from "react-i18next";
 
 import { Identity, useIdentities } from "./useIdentities";
 import CreateIdentityDialog from "./CreateIdentityDialog";
+import base58 from "bs58";
+import type { PeerSocket } from "./peer";
 
 const { secp256k1 } = await import("@noble/curves/secp256k1");
 
 type ParentMessage = {
   type: "auth";
   origin: string;
-  challenge: ArrayBuffer;
+  challenge: string;
   username?: string;
 };
+
+function UsingAnotherDevice({
+  onConnect,
+}: {
+  onConnect?: (socket: PeerSocket) => void;
+}) {
+  const [channel, setChannel] = useState<string | null>(null);
+  const [remoteConnected, setRemoteConnected] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const onConnectRef = useRef(onConnect);
+
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+  }, [onConnect]);
+
+  useEffect(() => {
+    const channel = base58.encode(crypto.getRandomValues(new Uint8Array(16)));
+    const abortController = new AbortController();
+    import("qrcode").then(async ({ toDataURL }) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set("channel", channel);
+      const dataUrl = await toDataURL(url.toString(), { width: 192 });
+      setChannel(channel);
+      imgRef.current!.src = dataUrl;
+    });
+    import("./peer").then(({ PeerServer }) => {
+      const peerServer = new PeerServer({
+        iceServers: [
+          { urls: "STUN:freestun.net:3479" },
+          { urls: "STUN:stun.cloudflare.com:3478" },
+          {
+            urls: "TURN:freeturn.net:3478",
+            username: "free",
+            credential: "free",
+          },
+        ],
+      });
+      peerServer.bind(channel);
+      peerServer.addEventListener(
+        "connection",
+        (event: CustomEvent<PeerSocket>) => {
+          const socket = event.detail;
+          peerServer.close();
+          socket.addEventListener("open", () => {
+            setRemoteConnected(true);
+            onConnectRef.current?.(socket);
+            abortController.signal.addEventListener("abort", () =>
+              socket.close()
+            );
+          });
+        }
+      );
+      abortController.signal.addEventListener("abort", () =>
+        peerServer.close()
+      );
+    });
+
+    return () => {
+      abortController.abort();
+    };
+  }, []);
+
+  return (
+    <Stack
+      sx={{
+        height: "100%",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 2,
+      }}
+    >
+      {remoteConnected ? (
+        <Typography>{t("operateOnAnotherDevice")}</Typography>
+      ) : (
+        <Typography>{t("scanQRCodeToSign")}</Typography>
+      )}
+      <img
+        ref={imgRef}
+        alt="QR code"
+        width="192"
+        height="192"
+        style={{
+          display: channel === null || remoteConnected ? "none" : "block",
+        }}
+      />
+    </Stack>
+  );
+}
 
 function Auth() {
   const [success, setSuccess] = useState<boolean | null>(null);
   const [origin, setOrigin] = useState<string | null>(null);
   const [username, setUsername] = useState<string | undefined>(undefined);
-  const challengeRef = useRef<ArrayBuffer | null>(null);
+  const challengeRef = useRef<string | null>(null);
   const { identities } = useIdentities();
   const [currentIdentity, setCurrentIdentity] = useState<Identity | null>(null);
   const [selectingIdentity, setSelectingIdentity] = useState(false);
   const [createIdentityDialogOpen, setCreateIdentityDialogOpen] =
     useState(false);
+  const [usingAnotherDevice, setUsingAnotherDevice] = useState(false);
+  const [peerSocket, setPeerSocket] = useState<PeerSocket | null>(null);
 
   const { t } = useTranslation();
 
@@ -43,9 +138,7 @@ function Auth() {
     if (currentIdentity === null || challengeRef.current === null) return;
     const publicKey = secp256k1.getPublicKey(currentIdentity.privateKey);
     const clientData = {
-      challenge: btoa(
-        String.fromCharCode(...new Uint8Array(challengeRef.current))
-      ),
+      challenge: challengeRef.current,
       origin,
       timestamp: Date.now(),
     };
@@ -60,36 +153,59 @@ function Auth() {
       .sign(digest, currentIdentity.privateKey)
       .toCompactRawBytes();
 
-    window.opener.postMessage(
-      {
-        type: "signature",
-        name: currentIdentity.name,
-        clientDataJSON,
-        fingerprint: currentIdentity.fingerprint,
-        signature,
-        publicKey,
-      },
-      origin
-    );
+    const message = {
+      type: "signature",
+      name: currentIdentity.name,
+      clientDataJSON,
+      fingerprint: currentIdentity.fingerprint,
+      signature: btoa(String.fromCharCode(...signature)),
+      publicKey: btoa(String.fromCharCode(...publicKey)),
+    };
+    if (peerSocket) {
+      peerSocket.send(JSON.stringify(message));
+    } else {
+      window.opener.postMessage(message, origin);
+    }
     setTimeout(() => setSuccess(true), 4);
     window.close();
-  }, [currentIdentity, origin]);
+  }, [currentIdentity, origin, peerSocket]);
+
+  const handleMessage = useCallback((data: ParentMessage) => {
+    if (data.type === "auth") {
+      if (!data.origin || !data.challenge) return;
+      setOrigin(data.origin);
+      setUsername(data.username);
+      challengeRef.current = data.challenge;
+    }
+  }, []);
 
   useEffect(() => {
-    if (origin !== null) return;
-    const handleMessage = async (event: MessageEvent<ParentMessage>) => {
+    if (origin !== null || !window.opener) return;
+    const handleOpenerMessage = async (event: MessageEvent<ParentMessage>) => {
       if (event.source !== window.opener) return;
-      if (event.data.type === "auth") {
-        if (!event.data.origin || !event.data.challenge) return;
-        setOrigin(event.data.origin);
-        setUsername(event.data.username);
-        challengeRef.current = event.data.challenge;
-      }
-      window.removeEventListener("message", handleMessage);
+      handleMessage(event.data);
+      window.removeEventListener("message", handleOpenerMessage);
     };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [origin]);
+    window.addEventListener("message", handleOpenerMessage);
+    return () => window.removeEventListener("message", handleOpenerMessage);
+  }, [handleMessage, origin]);
+
+  useEffect(() => {
+    const channel = new URLSearchParams(window.location.search).get("channel");
+    if (!channel) return;
+    const abortController = new AbortController();
+    import("./peer").then(({ PeerSocket }) => {
+      const peerSocket = new PeerSocket(channel!);
+      peerSocket.addEventListener("message", (event: MessageEvent<string>) => {
+        handleMessage(JSON.parse(event.data));
+      });
+      abortController.signal.addEventListener("abort", () =>
+        peerSocket.close()
+      );
+      setPeerSocket(peerSocket);
+    });
+    return () => abortController.abort();
+  }, [handleMessage]);
 
   useEffect(() => {
     if (identities === null || currentIdentity !== null) return;
@@ -220,6 +336,27 @@ function Auth() {
               </Button>
             </Stack>
           </React.Fragment>
+        ) : usingAnotherDevice ? (
+          <UsingAnotherDevice
+            onConnect={(socket) => {
+              socket.addEventListener(
+                "message",
+                (event: MessageEvent<string>) => {
+                  const data = JSON.parse(event.data);
+                  window.opener.postMessage(data, origin);
+                  setTimeout(() => setSuccess(true), 4);
+                  window.close();
+                }
+              );
+              socket.send(
+                JSON.stringify({
+                  type: "auth",
+                  origin,
+                  challenge: challengeRef.current,
+                })
+              );
+            }}
+          />
         ) : (
           <React.Fragment>
             <FormControl>
@@ -246,7 +383,15 @@ function Auth() {
                 ))}
               </Select>
             </FormControl>
-            <Stack direction="row" spacing={4}>
+            <Stack direction="row" spacing={2}>
+              {peerSocket === null && (
+                <Button
+                  size="large"
+                  onClick={() => setUsingAnotherDevice(true)}
+                >
+                  {t("Use another device")}
+                </Button>
+              )}
               <Box sx={{ flexGrow: 1 }}></Box>
               <Button
                 size="large"

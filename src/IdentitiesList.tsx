@@ -23,12 +23,15 @@ import { useIdentities } from "./useIdentities";
 import CreateIdentityDialog from "./CreateIdentityDialog";
 import ImportIdentityDialog from "./ImportIdentityDialog";
 
-function authenticate(providerOrigin: string) {
+function authenticate(providerOrigin: string, options?: { timeout?: number }) {
   return new Promise<{ name: string; fingerprint: string }>(
     (resolve, reject) => {
+      const timeout = options?.timeout;
       const childWindow = window.open(providerOrigin);
       if (!childWindow) return;
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const challenge = btoa(
+        String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))
+      );
       const interval = setInterval(() => {
         if (childWindow.closed) {
           clearInterval(interval);
@@ -55,13 +58,11 @@ function authenticate(providerOrigin: string) {
             name: string;
             clientDataJSON: string;
             fingerprint: string;
-            signature: Uint8Array;
-            publicKey: Uint8Array;
+            signature: string;
+            publicKey: string;
           } = event.data;
           const clientData = JSON.parse(event.data.clientDataJSON);
-          if (
-            atob(clientData.challenge) !== String.fromCharCode(...challenge)
-          ) {
+          if (clientData.challenge !== challenge) {
             reject(new Error("Invalid challenge"));
             return;
           }
@@ -72,9 +73,11 @@ function authenticate(providerOrigin: string) {
             )
           );
           const valid = secp256k1.verify(
-            secp256k1.Signature.fromCompact(signature),
+            secp256k1.Signature.fromCompact(
+              Uint8Array.from(atob(signature), (c) => c.charCodeAt(0))
+            ),
             digest,
-            publicKey
+            Uint8Array.from(atob(publicKey), (c) => c.charCodeAt(0))
           );
           if (valid) {
             resolve({ name, fingerprint });
@@ -86,13 +89,14 @@ function authenticate(providerOrigin: string) {
 
       window.addEventListener("message", messageHandler);
 
+      if (!timeout) return;
       setTimeout(() => {
         if (childWindow.closed) return;
         childWindow.close();
         clearInterval(interval);
         window.removeEventListener("message", messageHandler);
         reject(new Error("Timeout"));
-      }, 60000);
+      }, timeout * 1000);
     }
   );
 }
@@ -108,7 +112,7 @@ function IdentitiesList() {
   const { t } = useTranslation();
 
   const handleTryIdentity = useCallback(() => {
-    authenticate(window.location.origin)
+    authenticate(window.location.origin, { timeout: 120 })
       .then(({ name, fingerprint }) => {
         setMessage(
           `${t("Authenticated as")} ${name || fingerprint.slice(0, 8)}`
@@ -143,7 +147,6 @@ function IdentitiesList() {
             action={
               <Button
                 size="large"
-                disabled={identities.length === 0}
                 onClick={handleTryIdentity}
                 sx={{ textWrap: "nowrap" }}
               >
@@ -155,7 +158,20 @@ function IdentitiesList() {
             <Box>{t("canSign")}</Box>
           </Alert>
         ) : (
-          <Alert severity="info">{t("noIdentities")}</Alert>
+          <Alert
+            severity="info"
+            action={
+              <Button
+                size="large"
+                onClick={handleTryIdentity}
+                sx={{ textWrap: "nowrap" }}
+              >
+                {t("Try remote identity")}
+              </Button>
+            }
+          >
+            {t("noIdentities")}
+          </Alert>
         )}
         <Typography variant="h5" sx={{ marginTop: 2, marginBottom: 1 }}>
           {t("Identities")}
