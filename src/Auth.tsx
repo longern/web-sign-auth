@@ -290,15 +290,41 @@ function Auth() {
           },
         }}
       >
-        {identities.length === 0 ? (
+        {usingAnotherDevice ? (
+          <UsingAnotherDevice
+            onConnect={(socket) => {
+              socket.addEventListener(
+                "message",
+                (event: MessageEvent<string>) => {
+                  const data = JSON.parse(event.data);
+                  window.opener.postMessage(data, origin);
+                  setTimeout(() => setSuccess(true), 4);
+                  window.close();
+                }
+              );
+              socket.send(
+                JSON.stringify({
+                  type: "auth",
+                  origin,
+                  challenge: challengeRef.current,
+                })
+              );
+            }}
+          />
+        ) : identities.length === 0 ? (
           <Box>
-            {t("noIdentities")}
+            <Box>{t("noIdentities")}</Box>
             <Button
               sx={{ marginLeft: 1 }}
               onClick={() => setCreateIdentityDialogOpen(true)}
             >
               {t("Create identity")}
             </Button>
+            {peerSocket === null && (
+              <Button size="large" onClick={() => setUsingAnotherDevice(true)}>
+                {t("Use another device")}
+              </Button>
+            )}
           </Box>
         ) : !selectingIdentity ? (
           <React.Fragment>
@@ -336,27 +362,6 @@ function Auth() {
               </Button>
             </Stack>
           </React.Fragment>
-        ) : usingAnotherDevice ? (
-          <UsingAnotherDevice
-            onConnect={(socket) => {
-              socket.addEventListener(
-                "message",
-                (event: MessageEvent<string>) => {
-                  const data = JSON.parse(event.data);
-                  window.opener.postMessage(data, origin);
-                  setTimeout(() => setSuccess(true), 4);
-                  window.close();
-                }
-              );
-              socket.send(
-                JSON.stringify({
-                  type: "auth",
-                  origin,
-                  challenge: challengeRef.current,
-                })
-              );
-            }}
-          />
         ) : (
           <React.Fragment>
             <FormControl>
