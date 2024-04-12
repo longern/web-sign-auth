@@ -5,6 +5,8 @@ const resources = {
   en: {
     translation: {
       "Authenticated as": "Authenticated as",
+      "Authentication Failed": "Authentication Failed",
+      Back: "Back",
       Cancel: "Cancel",
       "Copy to clipboard": "Copy to clipboard",
       "Create identity": "Create identity",
@@ -51,7 +53,9 @@ const resources = {
   },
   "zh-CN": {
     translation: {
-      "Authenticated as": "已验证为",
+      "Authenticated as": "已认证为",
+      "Authentication Failed": "认证失败",
+      Back: "返回",
       Cancel: "取消",
       "Copy to clipboard": "复制到剪贴板",
       "Create identity": "创建身份",

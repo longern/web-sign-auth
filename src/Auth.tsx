@@ -30,8 +30,10 @@ type ParentMessage = {
 
 function UsingAnotherDevice({
   onConnect,
+  onBack,
 }: {
   onConnect?: (socket: PeerSocket) => void;
+  onBack?: () => void;
 }) {
   const [channel, setChannel] = useState<string | null>(null);
   const [remoteConnected, setRemoteConnected] = useState(false);
@@ -115,6 +117,15 @@ function UsingAnotherDevice({
           display: channel === null || remoteConnected ? "none" : "block",
         }}
       />
+      <Stack direction="row" sx={{ width: "100%" }}>
+        <Button size="large" onClick={onBack}>
+          {t("Back")}
+        </Button>
+        <Box sx={{ flexGrow: 1 }}></Box>
+        <Button size="large" onClick={() => window.close()}>
+          {t("Cancel")}
+        </Button>
+      </Stack>
     </Stack>
   );
 }
@@ -310,22 +321,28 @@ function Auth() {
                 })
               );
             }}
+            onBack={() => setUsingAnotherDevice(false)}
           />
         ) : identities.length === 0 ? (
-          <Box>
+          <React.Fragment>
             <Box>{t("noIdentities")}</Box>
-            <Button
-              sx={{ marginLeft: 1 }}
-              onClick={() => setCreateIdentityDialogOpen(true)}
-            >
-              {t("Create identity")}
-            </Button>
-            {peerSocket === null && (
-              <Button size="large" onClick={() => setUsingAnotherDevice(true)}>
-                {t("Use another device")}
+            <Stack direction="row" spacing={2}>
+              <Button
+                sx={{ marginLeft: 1 }}
+                onClick={() => setCreateIdentityDialogOpen(true)}
+              >
+                {t("Create identity")}
               </Button>
-            )}
-          </Box>
+              {peerSocket === null && (
+                <Button
+                  size="large"
+                  onClick={() => setUsingAnotherDevice(true)}
+                >
+                  {t("Use another device")}
+                </Button>
+              )}
+            </Stack>
+          </React.Fragment>
         ) : !selectingIdentity ? (
           <React.Fragment>
             <Typography variant="h6">{t("Sign as")}</Typography>
