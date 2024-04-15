@@ -3,17 +3,20 @@ import {
   AlertTitle,
   Box,
   Button,
+  Card,
   CardActions,
   CircularProgress,
   Divider,
   List,
   ListItem,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
+import { NavigateNext as NavigateNextIcon } from "@mui/icons-material";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
@@ -117,29 +120,20 @@ function IdentitiesList() {
         setMessage(`${t("Authenticated as")} ${name || id.slice(0, 8)}`);
       })
       .catch((error) => {
-        setMessage(error.message);
+        setMessage(t("Authentication failed"));
       });
   }, [t]);
 
   return identities === null ? (
     <CircularProgress />
   ) : (
-    <Stack
-      sx={{
-        height: "100%",
-        flexDirection: { lg: "row" },
-        alignItems: "center",
-        "& > *": {
-          lg: { flex: "1 0" },
-        },
-      }}
-    >
-      <Stack sx={{ alignItems: "center", marginY: 4, gap: 2 }}>
-        <img src="/logo192.png" alt="Logo" width="96" height="96" />
-        <Typography variant="h4">Web Sign Auth</Typography>
+    <Stack spacing={4} sx={{ height: "100%" }}>
+      <Stack direction="row" sx={{ alignItems: "center", paddingY: 1, gap: 2 }}>
+        <img src="/logo192.png" alt="Logo" width="48" height="48" />
+        <Typography variant="h5">Web Sign Auth</Typography>
       </Stack>
-      <Stack sx={{ width: "100%", height: "100%", minHeight: 0 }}>
-        {identities.length > 0 ? (
+      {identities.length > 0 ? (
+        <React.Fragment>
           <Alert
             severity="success"
             action={
@@ -155,60 +149,62 @@ function IdentitiesList() {
             <AlertTitle>{t("Identity created!")}</AlertTitle>
             <Box>{t("canSign")}</Box>
           </Alert>
-        ) : (
-          <Alert
-            severity="info"
-            action={
-              <Button
-                size="large"
-                onClick={handleTryIdentity}
-                sx={{ textWrap: "nowrap" }}
-              >
-                {t("Try remote identity")}
-              </Button>
-            }
-          >
-            {t("noIdentities")}
-          </Alert>
-        )}
-        <Typography variant="h5" sx={{ marginTop: 2, marginBottom: 1 }}>
-          {t("Identities")}
-        </Typography>
-        <List sx={{ flexGrow: 1, overflowY: "auto" }} disablePadding>
-          {identities.length > 0 &&
-            identities.map((identity, index) => (
-              <React.Fragment key={index}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component={RouterLink}
-                    to={`/${identity.id}`}
-                    sx={{ minHeight: 60 }}
-                  >
-                    <ListItemText
-                      primary={identity.name || identity.id.slice(0, 8)}
-                    />
-                  </ListItemButton>
-                </ListItem>
-                <Divider />
-              </React.Fragment>
-            ))}
-        </List>
-        <CardActions sx={{ marginTop: 1 }}>
-          <Button
-            variant="outlined"
-            size="large"
-            onClick={() => setCreateIdentityDialogOpen(true)}
-          >
-            {t("Create identity")}
-          </Button>
-          <Button
-            size="large"
-            onClick={() => setImportIdentityDialogOpen(true)}
-          >
-            {t("Import existing identity")}
-          </Button>
-        </CardActions>
-      </Stack>
+          <Card variant="outlined" sx={{ padding: 2, overflowY: "auto" }}>
+            <Typography variant="h5" gutterBottom>
+              {t("Identities you created")}
+            </Typography>
+            <List sx={{ flexGrow: 1, overflowY: "auto" }} disablePadding>
+              {identities.length > 0 &&
+                identities.map((identity, index) => (
+                  <React.Fragment key={index}>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        component={RouterLink}
+                        to={`/${identity.id}`}
+                        sx={{ minHeight: 60 }}
+                      >
+                        <ListItemText
+                          primary={identity.name || identity.id.slice(0, 8)}
+                        />
+                        <ListItemIcon sx={{ minWidth: 0 }}>
+                          <NavigateNextIcon />
+                        </ListItemIcon>
+                      </ListItemButton>
+                    </ListItem>
+                    {index !== identities.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+            </List>
+          </Card>
+        </React.Fragment>
+      ) : (
+        <Alert
+          severity="info"
+          action={
+            <Button
+              size="large"
+              onClick={handleTryIdentity}
+              sx={{ textWrap: "nowrap" }}
+            >
+              {t("Try it")}
+            </Button>
+          }
+        >
+          {t("identitiesNotFound")}
+        </Alert>
+      )}
+      <CardActions sx={{ marginTop: 1 }}>
+        <Button
+          variant="outlined"
+          size="large"
+          onClick={() => setCreateIdentityDialogOpen(true)}
+        >
+          {t("Create identity")}
+        </Button>
+        <Button size="large" onClick={() => setImportIdentityDialogOpen(true)}>
+          {t("Import existing identity")}
+        </Button>
+      </CardActions>
       <Snackbar
         open={message !== null}
         autoHideDuration={5000}

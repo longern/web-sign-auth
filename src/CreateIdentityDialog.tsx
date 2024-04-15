@@ -76,7 +76,7 @@ function CreateIdentityDialog({
               variant="standard"
               fullWidth
               margin="normal"
-              label={t("Id prefix")}
+              label={t("ID prefix")}
               value={prefix}
               error={prefix.length > 0 && !isValidPrefix(prefix)}
               onChange={(e) => setPrefix(e.target.value)}

@@ -5,7 +5,7 @@ const resources = {
   en: {
     translation: {
       "Authenticated as": "Authenticated as",
-      "Authentication Failed": "Authentication Failed",
+      "Authentication failed": "Authentication failed",
       Back: "Back",
       Cancel: "Cancel",
       "Copy to clipboard": "Copy to clipboard",
@@ -13,9 +13,9 @@ const resources = {
       Delete: "Delete",
       "Delete identity": "Delete identity",
       Edit: "Edit",
-      Id: "Id",
-      "Id prefix": "Id prefix",
-      Identities: "Identities",
+      ID: "ID",
+      "ID prefix": "ID prefix",
+      "Identities you created": "Identities you created",
       Identity: "Identity",
       "Identity created!": "Identity created!",
       Import: "Import",
@@ -42,11 +42,12 @@ const resources = {
       doNotShare:
         "Do not share your private key with anyone. Whoever has your private key can permanently control your account.",
       grantAccessIdentity: "Grant this origin access to your identity",
-      pastePrivateKey: "Paste your base64-encoded private key here.",
+      identitiesNotFound:
+        "No identities found on this device. But you can still sign with identities stored on other devices.",
       operateOnAnotherDevice: "Please operate on another device.",
+      pastePrivateKey: "Paste your base64-encoded private key here.",
       properlyStore:
         "Properly store your private key. Once lost, it can never be recovered.",
-      noIdentities: "No identities found on this device.",
       scanQRCodeToSign:
         "Scan the QR code below with your other device to sign.",
     },
@@ -54,7 +55,7 @@ const resources = {
   "zh-CN": {
     translation: {
       "Authenticated as": "已认证为",
-      "Authentication Failed": "认证失败",
+      "Authentication failed": "认证失败",
       Back: "返回",
       Cancel: "取消",
       "Copy to clipboard": "复制到剪贴板",
@@ -62,9 +63,9 @@ const resources = {
       Delete: "删除",
       "Delete identity": "删除身份",
       Edit: "编辑",
-      Id: "指纹",
-      "Id prefix": "指纹前缀",
-      Identities: "身份",
+      ID: "ID",
+      "ID prefix": "ID前缀",
+      "Identities you created": "您创建的身份",
       Identity: "身份",
       "Identity created!": "身份已创建！",
       Import: "导入",
@@ -91,7 +92,8 @@ const resources = {
       doNotShare:
         "不要与任何人分享您的私钥。拥有您的私钥的人可以永久获得您账户的控制权。",
       grantAccessIdentity: "授权此源访问您的身份",
-      noIdentities: "此设备上未找到任何身份。",
+      identitiesNotFound:
+        "此设备上未找到任何身份。但您仍然可以使用存储在其他设备上的身份来签名。",
       operateOnAnotherDevice: "请在另一台设备上操作。",
       pastePrivateKey: "在此处粘贴您的私钥（base64 编码）。",
       properlyStore: "妥善保管您的私钥。一旦丢失，将永远无法找回。",

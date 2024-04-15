@@ -158,7 +158,7 @@ function IdentityDetail() {
             )
           }
         />
-        <IdentityItem label={t("Id")} value={identity.id} />
+        <IdentityItem label={t("ID")} value={identity.id} />
         <IdentityItem
           label={t("Public key")}
           value={btoa(String.fromCharCode(...publicKey))}

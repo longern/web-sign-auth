@@ -95,29 +95,25 @@ function UsingAnotherDevice({
   }, []);
 
   return (
-    <Stack
-      sx={{
-        height: "100%",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 2,
-      }}
-    >
+    <React.Fragment>
       {remoteConnected ? (
-        <Typography>{t("operateOnAnotherDevice")}</Typography>
+        <Typography sx={{ flexGrow: 1 }}>
+          {t("operateOnAnotherDevice")}
+        </Typography>
       ) : (
         <Typography>{t("scanQRCodeToSign")}</Typography>
       )}
-      <img
-        ref={imgRef}
-        alt="QR code"
-        width="192"
-        height="192"
-        style={{
-          display: channel === null || remoteConnected ? "none" : "block",
-        }}
-      />
+      <Box sx={{ display: "flex", justifyContent: "center" }}>
+        <img
+          ref={imgRef}
+          alt="QR code"
+          width="192"
+          height="192"
+          style={{
+            display: channel === null || remoteConnected ? "none" : "block",
+          }}
+        />
+      </Box>
       <Stack direction="row" sx={{ width: "100%" }}>
         <Button size="large" onClick={onBack}>
           {t("Back")}
@@ -127,7 +123,7 @@ function UsingAnotherDevice({
           {t("Cancel")}
         </Button>
       </Stack>
-    </Stack>
+    </React.Fragment>
   );
 }
 
@@ -327,7 +323,7 @@ function Auth() {
           />
         ) : identities.length === 0 ? (
           <React.Fragment>
-            <Box>{t("noIdentities")}</Box>
+            <Box sx={{ flexGrow: 1 }}>{t("identitiesNotFound")}</Box>
             <Stack direction="row" spacing={2}>
               <Button
                 sx={{ marginLeft: 1 }}
