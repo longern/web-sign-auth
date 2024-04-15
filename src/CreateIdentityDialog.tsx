@@ -76,7 +76,7 @@ function CreateIdentityDialog({
               variant="standard"
               fullWidth
               margin="normal"
-              label={t("Fingerprint prefix")}
+              label={t("Id prefix")}
               value={prefix}
               error={prefix.length > 0 && !isValidPrefix(prefix)}
               onChange={(e) => setPrefix(e.target.value)}

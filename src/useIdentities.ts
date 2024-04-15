@@ -10,7 +10,7 @@ const { secp256k1 } = await import("@noble/curves/secp256k1");
 
 export interface Identity {
   name?: string;
-  fingerprint: string;
+  id: string;
   privateKey: Uint8Array;
 }
 
@@ -29,7 +29,7 @@ export async function createIdentity(options?: {
     const fingerprint = await base58Fingerprint(publicKey);
     if (options.signal?.aborted) throw new Error("Operation aborted");
     if (!options.prefix || fingerprint.startsWith(options.prefix)) {
-      return { name: options.name, fingerprint, privateKey };
+      return { name: options.name, id: fingerprint, privateKey };
     }
   }
 }
@@ -49,7 +49,7 @@ async function parseIdentity(identity: {
   const privateKey = base64ToArrayBuffer(privateKeyBase64);
   const publicKey = secp256k1.getPublicKey(privateKey);
   const fingerprint = await base58Fingerprint(publicKey);
-  return { name, fingerprint, privateKey };
+  return { name, id: fingerprint, privateKey };
 }
 
 const IDENTITIES_KEY = "webSignAuthIdentities";

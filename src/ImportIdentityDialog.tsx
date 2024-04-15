@@ -45,11 +45,11 @@ function ImportIdentityDialog({
       c.charCodeAt(0)
     );
     const publicKey = secp256k1.getPublicKey(privateKey);
-    const fingerprint = await base58Fingerprint(publicKey);
+    const id = await base58Fingerprint(publicKey);
     setIdentities((identities) =>
-      identities.find((identity) => identity.fingerprint === fingerprint)
+      identities.find((identity) => identity.id === id)
         ? identities
-        : [...identities, { fingerprint, privateKey }]
+        : [...identities, { id, privateKey }]
     );
     onClose();
   }, [onClose, privateKeyBase64, setIdentities]);

@@ -22,10 +22,11 @@ import type { PeerSocket } from "./peer";
 const { secp256k1 } = await import("@noble/curves/secp256k1");
 
 type ParentMessage = {
-  type: "auth";
-  origin: string;
-  challenge: string;
-  username?: string;
+  publicKey: {
+    origin: string;
+    challenge: string;
+    username?: string;
+  };
 };
 
 function UsingAnotherDevice({
@@ -165,12 +166,14 @@ function Auth() {
       .toCompactRawBytes();
 
     const message = {
-      type: "signature",
+      type: "public-key",
       name: currentIdentity.name,
-      clientDataJSON,
-      fingerprint: currentIdentity.fingerprint,
-      signature: btoa(String.fromCharCode(...signature)),
-      publicKey: btoa(String.fromCharCode(...publicKey)),
+      id: currentIdentity.id,
+      response: {
+        clientDataJSON,
+        signature: btoa(String.fromCharCode(...signature)),
+        publicKey: btoa(String.fromCharCode(...publicKey)),
+      },
     };
     if (peerSocket) {
       peerSocket.send(JSON.stringify(message));
@@ -182,11 +185,12 @@ function Auth() {
   }, [currentIdentity, origin, peerSocket]);
 
   const handleMessage = useCallback((data: ParentMessage) => {
-    if (data.type === "auth") {
-      if (!data.origin || !data.challenge) return;
-      setOrigin(data.origin);
-      setUsername(data.username);
-      challengeRef.current = data.challenge;
+    if (data.publicKey) {
+      const { publicKey } = data;
+      if (!publicKey.origin || !publicKey.challenge) return;
+      setOrigin(publicKey.origin);
+      setUsername(publicKey.username);
+      challengeRef.current = publicKey.challenge;
     }
   }, []);
 
@@ -247,7 +251,7 @@ function Auth() {
           gap: 2,
         }}
       >
-        <Box>You have signed as identity {currentIdentity.fingerprint}</Box>
+        <Box>You have signed as identity {currentIdentity.id}</Box>
       </Box>
     ) : (
       "Failed"
@@ -315,9 +319,7 @@ function Auth() {
               );
               socket.send(
                 JSON.stringify({
-                  type: "auth",
-                  origin,
-                  challenge: challengeRef.current,
+                  publicKey: { origin, challenge: challengeRef.current },
                 })
               );
             }}
@@ -349,10 +351,10 @@ function Auth() {
             {currentIdentity.name ? (
               <ListItemText
                 primary={currentIdentity.name}
-                secondary={currentIdentity.fingerprint}
+                secondary={currentIdentity.id}
               />
             ) : (
-              <ListItemText primary={currentIdentity.fingerprint} />
+              <ListItemText primary={currentIdentity.id} />
             )}
             <Stack direction="row" spacing={2}>
               <Button
@@ -389,18 +391,18 @@ function Auth() {
                 labelId="select-identity-label"
                 id="select-identity"
                 label={t("Identity")}
-                value={currentIdentity.fingerprint}
+                value={currentIdentity.id}
                 onChange={(event) =>
                   setCurrentIdentity(
                     identities.find(
-                      (identity) => identity.fingerprint === event.target.value
+                      (identity) => identity.id === event.target.value
                     ) ?? null
                   )
                 }
               >
                 {identities.map((identity, index) => (
-                  <MenuItem key={index} value={identity.fingerprint}>
-                    {identity.name || identity.fingerprint.slice(0, 8)}
+                  <MenuItem key={index} value={identity.id}>
+                    {identity.name || identity.id.slice(0, 8)}
                   </MenuItem>
                 ))}
               </Select>

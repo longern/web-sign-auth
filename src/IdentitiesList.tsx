@@ -23,82 +23,82 @@ import { useIdentities } from "./useIdentities";
 import CreateIdentityDialog from "./CreateIdentityDialog";
 import ImportIdentityDialog from "./ImportIdentityDialog";
 
+function toBase64Uint8Array(base64: string) {
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+}
+
 function authenticate(providerOrigin: string, options?: { timeout?: number }) {
-  return new Promise<{ name: string; fingerprint: string }>(
-    (resolve, reject) => {
-      const timeout = options?.timeout;
-      const childWindow = window.open(providerOrigin);
-      if (!childWindow) return;
-      const challenge = btoa(
-        String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))
-      );
-      const interval = setInterval(() => {
-        if (childWindow.closed) {
-          clearInterval(interval);
-          window.removeEventListener("message", messageHandler);
-          reject(new Error("Window closed"));
-        }
-        childWindow.postMessage(
-          { type: "auth", challenge, origin: window.location.origin },
-          "*"
-        );
-      }, 500);
-
-      const messageHandler = async (event: MessageEvent) => {
-        if (event.origin !== providerOrigin) return;
-        if (event.data.type === "signature") {
-          clearInterval(interval);
-          window.removeEventListener("message", messageHandler);
-          const {
-            name,
-            fingerprint,
-            signature,
-            publicKey,
-          }: {
-            name: string;
-            clientDataJSON: string;
-            fingerprint: string;
-            signature: string;
-            publicKey: string;
-          } = event.data;
-          const clientData = JSON.parse(event.data.clientDataJSON);
-          if (clientData.challenge !== challenge) {
-            reject(new Error("Invalid challenge"));
-            return;
-          }
-          const digest = new Uint8Array(
-            await crypto.subtle.digest(
-              "SHA-256",
-              new TextEncoder().encode(event.data.clientDataJSON)
-            )
-          );
-          const valid = secp256k1.verify(
-            secp256k1.Signature.fromCompact(
-              Uint8Array.from(atob(signature), (c) => c.charCodeAt(0))
-            ),
-            digest,
-            Uint8Array.from(atob(publicKey), (c) => c.charCodeAt(0))
-          );
-          if (valid) {
-            resolve({ name, fingerprint });
-          } else {
-            reject(new Error("Invalid signature"));
-          }
-        }
-      };
-
-      window.addEventListener("message", messageHandler);
-
-      if (!timeout) return;
-      setTimeout(() => {
-        if (childWindow.closed) return;
-        childWindow.close();
+  return new Promise<{ name: string; id: string }>((resolve, reject) => {
+    const timeout = options?.timeout;
+    const childWindow = window.open(providerOrigin);
+    if (!childWindow) return;
+    const challenge = btoa(
+      String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))
+    );
+    const interval = setInterval(() => {
+      if (childWindow.closed) {
         clearInterval(interval);
         window.removeEventListener("message", messageHandler);
-        reject(new Error("Timeout"));
-      }, timeout * 1000);
-    }
-  );
+        reject(new Error("Window closed"));
+      }
+      childWindow.postMessage(
+        { publicKey: { challenge, origin: window.location.origin } },
+        "*"
+      );
+    }, 500);
+
+    const messageHandler = async (event: MessageEvent) => {
+      if (event.origin !== providerOrigin) return;
+      if (event.data.type === "public-key") {
+        clearInterval(interval);
+        window.removeEventListener("message", messageHandler);
+        const {
+          name,
+          id,
+          response: { clientDataJSON, signature, publicKey },
+        }: {
+          name: string;
+          id: string;
+          response: {
+            clientDataJSON: string;
+            signature: string;
+            publicKey: string;
+          };
+        } = event.data;
+        const clientData = JSON.parse(clientDataJSON);
+        if (clientData.challenge !== challenge) {
+          return reject(new Error("Invalid challenge"));
+        }
+        const digest = new Uint8Array(
+          await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(clientDataJSON)
+          )
+        );
+        const valid = secp256k1.verify(
+          secp256k1.Signature.fromCompact(toBase64Uint8Array(signature)),
+          digest,
+          toBase64Uint8Array(publicKey)
+        );
+        if (valid) {
+          resolve({ name, id });
+        } else {
+          reject(new Error("Invalid signature"));
+        }
+      }
+    };
+
+    window.addEventListener("message", messageHandler);
+
+    if (!timeout) return;
+    setTimeout(() => {
+      if (childWindow.closed) return;
+      childWindow.close();
+      clearInterval(interval);
+      window.removeEventListener("message", messageHandler);
+      reject(new Error("Timeout"));
+    }, timeout * 1000);
+  });
 }
 
 function IdentitiesList() {
@@ -113,10 +113,8 @@ function IdentitiesList() {
 
   const handleTryIdentity = useCallback(() => {
     authenticate(window.location.origin, { timeout: 120 })
-      .then(({ name, fingerprint }) => {
-        setMessage(
-          `${t("Authenticated as")} ${name || fingerprint.slice(0, 8)}`
-        );
+      .then(({ name, id }) => {
+        setMessage(`${t("Authenticated as")} ${name || id.slice(0, 8)}`);
       })
       .catch((error) => {
         setMessage(error.message);
@@ -183,13 +181,11 @@ function IdentitiesList() {
                 <ListItem disablePadding>
                   <ListItemButton
                     component={RouterLink}
-                    to={`/${identity.fingerprint}`}
+                    to={`/${identity.id}`}
                     sx={{ minHeight: 60 }}
                   >
                     <ListItemText
-                      primary={
-                        identity.name || identity.fingerprint.slice(0, 8)
-                      }
+                      primary={identity.name || identity.id.slice(0, 8)}
                     />
                   </ListItemButton>
                 </ListItem>

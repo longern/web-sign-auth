@@ -63,7 +63,7 @@ function IdentityItem({
 }
 
 function IdentityDetail() {
-  const { fingerprint } = useParams<{ fingerprint: string }>();
+  const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const { identities, setIdentities } = useIdentities();
   const [identity, setIdentity] = useState<Identity | undefined | null>(null);
@@ -90,13 +90,11 @@ function IdentityDetail() {
   useEffect(() => {
     if (identities === null) return;
     const identity =
-      fingerprint.length <= 8
+      id.length <= 8
         ? undefined
-        : identities.find((identity) =>
-            identity.fingerprint.startsWith(fingerprint)
-          );
+        : identities.find((identity) => identity.id.startsWith(id));
     setIdentity(identity);
-  }, [identities, fingerprint]);
+  }, [identities, id]);
 
   return identity === null ? (
     <CircularProgress />
@@ -160,7 +158,7 @@ function IdentityDetail() {
             )
           }
         />
-        <IdentityItem label={t("Fingerprint")} value={identity.fingerprint} />
+        <IdentityItem label={t("Id")} value={identity.id} />
         <IdentityItem
           label={t("Public key")}
           value={btoa(String.fromCharCode(...publicKey))}

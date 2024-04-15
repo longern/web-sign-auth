@@ -35,7 +35,7 @@ const router = createBrowserRouter([
       })),
   },
   {
-    path: "/:fingerprint",
+    path: "/:id",
     lazy: () =>
       import("./IdentityDetail").then((module) => ({
         Component: module.default,
