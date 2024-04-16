@@ -199,7 +199,7 @@ function IdentitiesList() {
           {t("identitiesNotFound")}
         </Alert>
       )}
-      <CardActions sx={{ marginTop: 1 }}>
+      <CardActions>
         <Button
           variant="outlined"
           size="large"
