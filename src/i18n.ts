@@ -43,7 +43,9 @@ const resources = {
         "Do not share your private key with anyone. Whoever has your private key can permanently control your account.",
       grantAccessIdentity: "Grant this origin access to your identity",
       identitiesNotFound:
-        "No identities found on this device. But you can still sign with identities stored on other devices.",
+        "No identities found on this device. You can create identities on this device or sign using identities stored on other devices.",
+      identityHelpText:
+        "You can create an identity on this device and use it to sign. The server will verify your signature using asymmetric encryption algorithms. The private key will be stored on this device and will not be uploaded to the server.",
       operateOnAnotherDevice: "Please operate on another device.",
       pastePrivateKey: "Paste your base64-encoded private key here.",
       properlyStore:
@@ -93,7 +95,9 @@ const resources = {
         "不要与任何人分享您的私钥。拥有您的私钥的人可以永久获得您账户的控制权。",
       grantAccessIdentity: "授权此源访问您的身份",
       identitiesNotFound:
-        "此设备上未找到任何身份。但您仍然可以使用存储在其他设备上的身份来签名。",
+        "此设备上未找到任何身份。您可以在此设备上创建身份，也可以使用其他设备上存储的身份进行签名。",
+      identityHelpText:
+        "您可以在此设备上创建一个身份，然后使用它来签名，服务端将使用非对称加密算法验证您的签名。私钥将存储在此设备上，不会上传到服务器。",
       operateOnAnotherDevice: "请在另一台设备上操作。",
       pastePrivateKey: "在此处粘贴您的私钥（base64 编码）。",
       properlyStore: "妥善保管您的私钥。一旦丢失，将永远无法找回。",

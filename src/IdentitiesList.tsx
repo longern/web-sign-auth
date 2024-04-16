@@ -184,20 +184,23 @@ function IdentitiesList() {
           </Card>
         </React.Fragment>
       ) : (
-        <Alert
-          severity="info"
-          action={
-            <Button
-              size="large"
-              onClick={handleTryIdentity}
-              sx={{ textWrap: "nowrap" }}
-            >
-              {t("Try it")}
-            </Button>
-          }
-        >
-          {t("identitiesNotFound")}
-        </Alert>
+        <React.Fragment>
+          <Alert
+            severity="info"
+            action={
+              <Button
+                size="large"
+                onClick={handleTryIdentity}
+                sx={{ textWrap: "nowrap" }}
+              >
+                {t("Try it")}
+              </Button>
+            }
+          >
+            {t("identitiesNotFound")}
+          </Alert>
+          <Box>{t("identityHelpText")}</Box>
+        </React.Fragment>
       )}
       <CardActions>
         <Button

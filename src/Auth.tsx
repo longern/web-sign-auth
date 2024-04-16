@@ -326,15 +326,13 @@ function Auth() {
         ) : identities.length === 0 ? (
           <React.Fragment>
             <Box sx={{ flexGrow: 1 }}>{t("identitiesNotFound")}</Box>
-            <Box>
+            <Stack direction="row" spacing={2}>
               <Button
-                sx={{ marginLeft: 1 }}
+                size="large"
                 onClick={() => setCreateIdentityDialogOpen(true)}
               >
                 {t("Create identity")}
               </Button>
-            </Box>
-            <Stack direction="row" spacing={2}>
               {peerSocket === null && (
                 <Button
                   size="large"
@@ -343,6 +341,8 @@ function Auth() {
                   {t("Use another device")}
                 </Button>
               )}
+            </Stack>
+            <Box sx={{ display: "flex" }}>
               <Box sx={{ flexGrow: 1 }}></Box>
               <Button
                 variant="outlined"
@@ -351,7 +351,7 @@ function Auth() {
               >
                 {t("Cancel")}
               </Button>
-            </Stack>
+            </Box>
           </React.Fragment>
         ) : !selectingIdentity ? (
           <React.Fragment>
