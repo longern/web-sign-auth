@@ -29,6 +29,18 @@ type ParentMessage = {
   };
 };
 
+const RTC_CONFIGURATION: RTCConfiguration = {
+  iceServers: [
+    { urls: "STUN:freestun.net:3479" },
+    { urls: "STUN:stun.cloudflare.com:3478" },
+    {
+      urls: "TURN:freeturn.net:3478",
+      username: "free",
+      credential: "free",
+    },
+  ],
+};
+
 function UsingAnotherDevice({
   onConnect,
   onBack,
@@ -58,17 +70,7 @@ function UsingAnotherDevice({
       imgRef.current!.src = dataUrl;
     });
     import("./peer").then(({ PeerServer }) => {
-      const peerServer = new PeerServer({
-        iceServers: [
-          { urls: "STUN:freestun.net:3479" },
-          { urls: "STUN:stun.cloudflare.com:3478" },
-          {
-            urls: "TURN:freeturn.net:3478",
-            username: "free",
-            credential: "free",
-          },
-        ],
-      });
+      const peerServer = new PeerServer(RTC_CONFIGURATION);
       peerServer.bind(channel);
       peerServer.addEventListener(
         "connection",
@@ -206,7 +208,7 @@ function Auth() {
     if (!channel) return;
     const abortController = new AbortController();
     import("./peer").then(({ PeerSocket }) => {
-      const peerSocket = new PeerSocket(channel!);
+      const peerSocket = new PeerSocket(channel!, RTC_CONFIGURATION);
       peerSocket.addEventListener("message", (event: MessageEvent<string>) => {
         handleMessage(JSON.parse(event.data));
       });
