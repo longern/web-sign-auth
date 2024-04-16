@@ -167,9 +167,14 @@ function IdentitiesList() {
                         to={`/${identity.id}`}
                         sx={{ minHeight: 60 }}
                       >
-                        <ListItemText
-                          primary={identity.name || identity.id.slice(0, 8)}
-                        />
+                        {identity.name ? (
+                          <ListItemText
+                            primary={identity.name}
+                            secondary={identity.id}
+                          />
+                        ) : (
+                          <ListItemText primary={identity.id} />
+                        )}
                         <ListItemIcon sx={{ minWidth: 0 }}>
                           <NavigateNextIcon />
                         </ListItemIcon>
