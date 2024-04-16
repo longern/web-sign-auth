@@ -149,8 +149,12 @@ function IdentitiesList() {
             <AlertTitle>{t("Identity created!")}</AlertTitle>
             <Box>{t("canSign")}</Box>
           </Alert>
-          <Card variant="outlined" sx={{ padding: 2, overflowY: "auto" }}>
-            <Typography variant="h5" gutterBottom>
+          <Card variant="outlined" sx={{ overflowY: "auto" }}>
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{ paddingX: 2, paddingTop: 2 }}
+            >
               {t("Identities you created")}
             </Typography>
             <List sx={{ flexGrow: 1, overflowY: "auto" }} disablePadding>
@@ -171,7 +175,9 @@ function IdentitiesList() {
                         </ListItemIcon>
                       </ListItemButton>
                     </ListItem>
-                    {index !== identities.length - 1 && <Divider />}
+                    {index !== identities.length - 1 && (
+                      <Divider variant="middle" component="li" />
+                    )}
                   </React.Fragment>
                 ))}
             </List>
