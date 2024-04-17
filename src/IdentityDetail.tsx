@@ -48,6 +48,7 @@ function IdentityItem({
           </Typography>
           <Box
             sx={{
+              width: "100%",
               overflowWrap: "anywhere",
               wordBreak: "break-all",
             }}
@@ -62,15 +63,74 @@ function IdentityItem({
   );
 }
 
+function Editable({
+  value,
+  onChange,
+  fallback,
+}: {
+  value?: string;
+  onChange: (value: string) => void;
+  fallback?: React.ReactNode;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+
+  const { t } = useTranslation();
+
+  return (
+    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+      {editing ? (
+        <React.Fragment>
+          <TextField
+            variant="standard"
+            hiddenLabel
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <Button
+            onClick={() => {
+              setEditing(false);
+              onChange(text);
+            }}
+          >
+            {t("Save")}
+          </Button>
+          <Button onClick={() => setEditing(false)}>{t("Cancel")}</Button>
+        </React.Fragment>
+      ) : (
+        <React.Fragment>
+          <Box
+            sx={{
+              width: 180,
+              overflowX: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {value || fallback}
+          </Box>
+          <Button
+            onClick={() => {
+              setEditing(true);
+              setText(value || "");
+            }}
+          >
+            {t("Edit")}
+          </Button>
+        </React.Fragment>
+      )}
+    </Stack>
+  );
+}
+
 function IdentityDetail() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
   const { identities, setIdentities } = useIdentities();
   const [identity, setIdentity] = useState<Identity | undefined | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [name, setName] = useState<string>("");
+
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const publicKey = useMemo(() => {
@@ -112,50 +172,21 @@ function IdentityDetail() {
         <IdentityItem
           label={t("Name")}
           value={
-            editingName ? (
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  variant="standard"
-                  hiddenLabel
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <Button
-                  onClick={() => {
-                    setEditingName(false);
-                    const newIdentity = {
-                      ...identity,
-                      name: name || undefined,
-                    };
-                    setIdentity(newIdentity);
-                    setIdentities((identities) =>
-                      identities.map((i) => (i === identity ? newIdentity : i))
-                    );
-                  }}
-                >
-                  {t("Save")}
-                </Button>
-              </Stack>
-            ) : (
-              <React.Fragment>
-                {identity.name ? (
-                  identity.name
-                ) : (
-                  <Typography component={"span"} color="textSecondary">
-                    {t("Unnamed")}
-                  </Typography>
-                )}
-                <Button
-                  sx={{ marginLeft: 1 }}
-                  onClick={() => {
-                    setEditingName(true);
-                    setName(identity.name || "");
-                  }}
-                >
-                  {t("Edit")}
-                </Button>
-              </React.Fragment>
-            )
+            <Editable
+              value={identity.name}
+              onChange={(name) => {
+                const newIdentity = { ...identity, name: name || undefined };
+                setIdentity(newIdentity);
+                setIdentities(
+                  identities.map((i) => (i === identity ? newIdentity : i))
+                );
+              }}
+              fallback={
+                <Typography component={"span"} color="textSecondary">
+                  {t("Unnamed")}
+                </Typography>
+              }
+            />
           }
         />
         <IdentityItem label={t("ID")} value={identity.id} />
@@ -205,9 +236,7 @@ function IdentityDetail() {
         onClose={() => setShowConfirmDelete(false)}
       >
         <DialogContent>
-          <Typography>
-            {t("Are you sure you want to delete this identity?")}
-          </Typography>
+          <Typography>{t("confirmDelete")}</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowConfirmDelete(false)}>

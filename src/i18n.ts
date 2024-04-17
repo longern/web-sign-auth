@@ -39,6 +39,7 @@ const resources = {
       aboutToSign: "You are about to sign the agreement:",
       beforeCreating: "Before you create an identity, please note that:",
       canSign: "Now you can sign as the identities created on this device.",
+      confirmDelete: "Are you sure you want to delete this identity?",
       doNotShare:
         "Do not share your private key with anyone. Whoever has your private key can permanently control your account.",
       grantAccessIdentity: "Grant this origin access to your identity",
@@ -91,6 +92,7 @@ const resources = {
       aboutToSign: "您即将签名同意：",
       beforeCreating: "在创建身份之前，请注意：",
       canSign: "现在您可以使用此设备上创建的身份进行签名。",
+      confirmDelete: "您确定要删除此身份吗？",
       doNotShare:
         "不要与任何人分享您的私钥。拥有您的私钥的人可以永久获得您账户的控制权。",
       grantAccessIdentity: "授权此源访问您的身份",
