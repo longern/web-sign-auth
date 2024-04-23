@@ -53,8 +53,11 @@ const globalStyles = (
   />
 );
 
+const searchParams = new URLSearchParams(window.location.search);
 const isAuthPage =
-  window.opener || new URLSearchParams(window.location.search).has("channel");
+  window.opener ||
+  searchParams.has("channel") ||
+  (searchParams.has("challenge") && searchParams.has("callback_url"));
 
 function App() {
   return (

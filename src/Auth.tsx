@@ -64,6 +64,9 @@ function UsingAnotherDevice({
     const abortController = new AbortController();
     import("qrcode").then(async ({ toDataURL }) => {
       const url = new URL(window.location.href);
+      Array.from(url.searchParams.keys()).forEach((key) =>
+        url.searchParams.delete(key)
+      );
       url.searchParams.set("channel", channel);
       const dataUrl = await toDataURL(url.toString(), { width: 192 });
       setChannel(channel);
@@ -129,6 +132,17 @@ function UsingAnotherDevice({
   );
 }
 
+async function sign(clientDataJSON: string, privateKey: Uint8Array) {
+  const digest = new Uint8Array(
+    await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(clientDataJSON)
+    )
+  );
+  const signature = secp256k1.sign(digest, privateKey).toCompactRawBytes();
+  return signature;
+}
+
 function Auth() {
   const [success, setSuccess] = useState<boolean | null>(null);
   const [origin, setOrigin] = useState<string | null>(null);
@@ -141,27 +155,19 @@ function Auth() {
     useState(false);
   const [usingAnotherDevice, setUsingAnotherDevice] = useState(false);
   const [peerSocket, setPeerSocket] = useState<PeerSocket | null>(null);
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
 
   const { t } = useTranslation();
 
   const handleSign = useCallback(async () => {
     if (currentIdentity === null || challengeRef.current === null) return;
     const publicKey = secp256k1.getPublicKey(currentIdentity.privateKey);
-    const clientData = {
+    const clientDataJSON = JSON.stringify({
       challenge: challengeRef.current,
       origin,
       timestamp: Date.now(),
-    };
-    const clientDataJSON = JSON.stringify(clientData);
-    const digest = new Uint8Array(
-      await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(clientDataJSON)
-      )
-    );
-    const signature = secp256k1
-      .sign(digest, currentIdentity.privateKey)
-      .toCompactRawBytes();
+    });
+    const signature = await sign(clientDataJSON, currentIdentity.privateKey);
 
     const message = {
       type: "public-key",
@@ -175,12 +181,17 @@ function Auth() {
     };
     if (peerSocket) {
       peerSocket.send(JSON.stringify(message));
+    } else if (callbackUrl) {
+      const searchParams = new URLSearchParams();
+      searchParams.set("sign", JSON.stringify(message));
+      window.location.href = `${callbackUrl}?${searchParams.toString()}`;
+      return;
     } else {
       window.opener.postMessage(message, origin);
     }
     setTimeout(() => setSuccess(true), 4);
     window.close();
-  }, [currentIdentity, origin, peerSocket]);
+  }, [callbackUrl, currentIdentity, origin, peerSocket]);
 
   const handleMessage = useCallback((data: ParentMessage) => {
     if (data.publicKey) {
@@ -193,7 +204,22 @@ function Auth() {
   }, []);
 
   useEffect(() => {
-    if (origin !== null || !window.opener) return;
+    if (origin !== null) return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has("challenge") && searchParams.has("callback_url")) {
+      const challenge = searchParams
+        .get("challenge")
+        .replace("_", "+")
+        .replace("-", "/");
+      const callbackUrl = searchParams.get("callback_url");
+      challengeRef.current = challenge;
+      setOrigin(new URL(callbackUrl).origin);
+      setCallbackUrl(callbackUrl);
+      return;
+    }
+
+    if (!window.opener) return;
     const handleOpenerMessage = async (event: MessageEvent<ParentMessage>) => {
       if (event.source !== window.opener) return;
       handleMessage(event.data);
@@ -225,7 +251,7 @@ function Auth() {
     setCurrentIdentity(identities[0]);
   }, [identities, currentIdentity]);
 
-  return identities === null || origin === null ? (
+  return identities === null || currentIdentity === null || origin === null ? (
     <Box
       sx={{
         display: "flex",
@@ -310,9 +336,15 @@ function Auth() {
                 "message",
                 (event: MessageEvent<string>) => {
                   const data = JSON.parse(event.data);
-                  window.opener.postMessage(data, origin);
-                  setTimeout(() => setSuccess(true), 4);
-                  window.close();
+                  if (callbackUrl) {
+                    const searchParams = new URLSearchParams();
+                    searchParams.set("sign", JSON.stringify(data));
+                    window.location.href = `${callbackUrl}?${searchParams.toString()}`;
+                  } else {
+                    window.opener.postMessage(data, origin);
+                    setTimeout(() => setSuccess(true), 4);
+                    window.close();
+                  }
                 }
               );
               socket.send(
