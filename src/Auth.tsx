@@ -238,6 +238,7 @@ function Auth() {
       peerSocket.addEventListener("message", (event: MessageEvent<string>) => {
         handleMessage(JSON.parse(event.data));
       });
+      peerSocket.addEventListener("error", () => setSuccess(false));
       abortController.signal.addEventListener("abort", () =>
         peerSocket.close()
       );

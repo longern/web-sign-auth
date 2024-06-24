@@ -82,13 +82,22 @@ export class PeerSocket extends EventTarget implements Socket {
             break;
         }
       };
-      signalSocket.onerror = (event: ErrorEvent) => {
+      signalSocket.onerror = () => {
         this.dispatchEvent(
           new ErrorEvent("error", {
             error: new Error("Failed to connect to the signaling server."),
           })
         );
       };
+      peer.addEventListener("iceconnectionstatechange", () => {
+        if (peer.iceConnectionState === "failed") {
+          this.dispatchEvent(
+            new ErrorEvent("error", {
+              error: new Error("ICE connection failed."),
+            })
+          );
+        }
+      });
       peer.addEventListener("close", () => {
         signalSocket.close();
       });
