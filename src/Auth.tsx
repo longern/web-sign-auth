@@ -14,10 +14,11 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Identity, useIdentities } from "./useIdentities";
 import CreateIdentityDialog from "./CreateIdentityDialog";
 import base58 from "bs58";
 import type { PeerSocket } from "./peer";
+import { useAppSelector } from "./app/hooks";
+import { Identity } from "./app/identity";
 
 const { secp256k1 } = await import("@noble/curves/secp256k1");
 
@@ -148,7 +149,7 @@ function Auth() {
   const [origin, setOrigin] = useState<string | null>(null);
   const [username, setUsername] = useState<string | undefined>(undefined);
   const challengeRef = useRef<string | null>(null);
-  const { identities } = useIdentities();
+  const { identities } = useAppSelector((state) => state.identity);
   const [currentIdentity, setCurrentIdentity] = useState<Identity | null>(null);
   const [selectingIdentity, setSelectingIdentity] = useState(false);
   const [createIdentityDialogOpen, setCreateIdentityDialogOpen] =

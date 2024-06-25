@@ -9,8 +9,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useIdentities } from "./useIdentities";
-import { base58Fingerprint } from "./utils";
+import { base58Fingerprint } from "./app/utils";
+import { useAppDispatch, useAppSelector } from "./app/hooks";
+import { setIdentities } from "./app/identity";
 
 function ImportIdentityDialog({
   open,
@@ -20,8 +21,9 @@ function ImportIdentityDialog({
   onClose: () => void;
 }) {
   const [privateKeyBase64, setPrivateKeyBase64] = useState<string>("");
+  const identities = useAppSelector((state) => state.identity.identities);
   const { t } = useTranslation();
-  const { setIdentities } = useIdentities();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (!open) {
@@ -46,13 +48,15 @@ function ImportIdentityDialog({
     );
     const publicKey = secp256k1.getPublicKey(privateKey);
     const id = await base58Fingerprint(publicKey);
-    setIdentities((identities) =>
-      identities.find((identity) => identity.id === id)
-        ? identities
-        : [...identities, { id, privateKey }]
+    dispatch(
+      setIdentities(
+        identities.find((identity) => identity.id === id)
+          ? identities
+          : [...identities, { id, privateKey }]
+      )
     );
     onClose();
-  }, [onClose, privateKeyBase64, setIdentities]);
+  }, [dispatch, identities, onClose, privateKeyBase64]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth>

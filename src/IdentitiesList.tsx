@@ -12,7 +12,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
@@ -22,9 +21,10 @@ import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
-import { useIdentities } from "./useIdentities";
 import CreateIdentityDialog from "./CreateIdentityDialog";
 import ImportIdentityDialog from "./ImportIdentityDialog";
+import { useAppDispatch, useAppSelector } from "./app/hooks";
+import { setMessage } from "./app/snackbar";
 
 function toBase64Uint8Array(base64: string) {
   return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -104,25 +104,63 @@ function authenticate(providerOrigin: string, options?: { timeout?: number }) {
   });
 }
 
-function IdentitiesList() {
-  const { identities } = useIdentities();
-  const [message, setMessage] = React.useState<string | null>(null);
+function IdentityList() {
+  const identities = useAppSelector((state) => state.identity.identities);
+
+  return (
+    <List sx={{ flexGrow: 1, overflowY: "auto" }} disablePadding>
+      {identities.length > 0 &&
+        identities.map((identity, index) => (
+          <React.Fragment key={index}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={RouterLink}
+                to={`/${identity.id}`}
+                sx={{ minHeight: 60 }}
+              >
+                {identity.name ? (
+                  <ListItemText
+                    primary={identity.name}
+                    secondary={identity.id}
+                  />
+                ) : (
+                  <ListItemText primary={identity.id} />
+                )}
+                <ListItemIcon sx={{ minWidth: 0 }}>
+                  <NavigateNextIcon />
+                </ListItemIcon>
+              </ListItemButton>
+            </ListItem>
+            {index !== identities.length - 1 && (
+              <Divider variant="middle" component="li" />
+            )}
+          </React.Fragment>
+        ))}
+    </List>
+  );
+}
+
+function IdentitiesListPage() {
+  const { identities } = useAppSelector((state) => state.identity);
   const [createIdentityDialogOpen, setCreateIdentityDialogOpen] =
     React.useState(false);
   const [importIdentityDialogOpen, setImportIdentityDialogOpen] =
     React.useState(false);
 
+  const dispatch = useAppDispatch();
   const { t } = useTranslation();
 
   const handleTryIdentity = useCallback(() => {
     authenticate(window.location.origin, { timeout: 120 })
       .then(({ name, id }) => {
-        setMessage(`${t("Authenticated as")} ${name || id.slice(0, 8)}`);
+        dispatch(
+          setMessage(`${t("Authenticated as")} ${name || id.slice(0, 8)}`)
+        );
       })
       .catch((error) => {
-        setMessage(t("Authentication failed"));
+        dispatch(setMessage(t("Authentication failed")));
       });
-  }, [t]);
+  }, [dispatch, t]);
 
   return identities === null ? (
     <CircularProgress />
@@ -157,35 +195,7 @@ function IdentitiesList() {
             >
               {t("Identities you created")}
             </Typography>
-            <List sx={{ flexGrow: 1, overflowY: "auto" }} disablePadding>
-              {identities.length > 0 &&
-                identities.map((identity, index) => (
-                  <React.Fragment key={index}>
-                    <ListItem disablePadding>
-                      <ListItemButton
-                        component={RouterLink}
-                        to={`/${identity.id}`}
-                        sx={{ minHeight: 60 }}
-                      >
-                        {identity.name ? (
-                          <ListItemText
-                            primary={identity.name}
-                            secondary={identity.id}
-                          />
-                        ) : (
-                          <ListItemText primary={identity.id} />
-                        )}
-                        <ListItemIcon sx={{ minWidth: 0 }}>
-                          <NavigateNextIcon />
-                        </ListItemIcon>
-                      </ListItemButton>
-                    </ListItem>
-                    {index !== identities.length - 1 && (
-                      <Divider variant="middle" component="li" />
-                    )}
-                  </React.Fragment>
-                ))}
-            </List>
+            <IdentityList />
           </Card>
         </React.Fragment>
       ) : (
@@ -219,12 +229,6 @@ function IdentitiesList() {
           {t("Import existing identity")}
         </Button>
       </CardActions>
-      <Snackbar
-        open={message !== null}
-        autoHideDuration={5000}
-        onClose={() => setMessage(null)}
-        message={message}
-      />
       <CreateIdentityDialog
         open={createIdentityDialogOpen}
         onClose={() => setCreateIdentityDialogOpen(false)}
@@ -237,4 +241,4 @@ function IdentitiesList() {
   );
 }
 
-export default IdentitiesList;
+export default IdentitiesListPage;

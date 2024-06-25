@@ -9,11 +9,16 @@ import {
   DialogContent,
   TextField,
 } from "@mui/material";
-import { createIdentity, useIdentities } from "./useIdentities";
 import { useTranslation } from "react-i18next";
+import { useAppDispatch } from "./app/hooks";
+import { appendIdentityThunk } from "./app/identity";
 
 function isValidPrefix(prefix: string) {
   return prefix.match(/^[1-9A-HJ-NP-Za-km-z]{1,3}$/);
+}
+
+interface AbortablePromise {
+  abort(): void;
 }
 
 function CreateIdentityDialog({
@@ -25,35 +30,37 @@ function CreateIdentityDialog({
 }) {
   const [name, setName] = useState("");
   const [prefix, setPrefix] = useState("");
-  const [abortController, setAbortController] =
-    useState<AbortController | null>(null);
-  const { setIdentities } = useIdentities();
+  const [abortablePromise, setAbortablePromise] =
+    useState<AbortablePromise | null>(null);
+  const dispatch = useAppDispatch();
   const { t } = useTranslation();
 
   const handleClose = useCallback(() => {
-    abortController?.abort();
-    setAbortController(null);
+    abortablePromise?.abort();
+    setAbortablePromise(null);
     onClose();
-  }, [abortController, onClose]);
+  }, [abortablePromise, onClose]);
 
   const handleCreate = useCallback(() => {
-    const abortController = new AbortController();
-    setAbortController(abortController);
-    createIdentity({
-      name: name || undefined,
-      prefix: prefix || undefined,
-      signal: abortController.signal,
-    })
-      .then((identity) => {
-        setIdentities((identities) => [...identities, identity]);
-        setAbortController(null);
+    const thunk = dispatch(
+      appendIdentityThunk({
+        name: name || undefined,
+        prefix: prefix || undefined,
+      })
+    );
+    setAbortablePromise(thunk);
+
+    thunk
+      .unwrap()
+      .then(() => {
+        setAbortablePromise(null);
         onClose();
         setTimeout(() => {
           window.location.reload();
         }, 4);
       })
       .catch(() => {});
-  }, [name, prefix, setIdentities, onClose]);
+  }, [dispatch, name, prefix, onClose]);
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -89,11 +96,11 @@ function CreateIdentityDialog({
         <Button
           variant="contained"
           disabled={
-            abortController !== null ||
+            abortablePromise !== null ||
             (prefix.length > 0 && !isValidPrefix(prefix))
           }
           startIcon={
-            abortController ? (
+            abortablePromise !== null ? (
               <CircularProgress color="inherit" size={16} />
             ) : null
           }

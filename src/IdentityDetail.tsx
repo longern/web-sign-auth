@@ -23,8 +23,9 @@ import {
 } from "@mui/icons-material";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
-import { Identity, useIdentities } from "./useIdentities";
 import PrivateKeyDialog from "./PrivateKeyDialog";
+import { Identity, setIdentities } from "./app/identity";
+import { useAppDispatch, useAppSelector } from "./app/hooks";
 
 function IdentityItem({
   label,
@@ -125,12 +126,13 @@ function Editable({
 
 function IdentityDetail() {
   const { id } = useParams<{ id: string }>();
-  const { identities, setIdentities } = useIdentities();
+  const { identities } = useAppSelector((state) => state.identity);
   const [identity, setIdentity] = useState<Identity | undefined | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
 
   const { t } = useTranslation();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const publicKey = useMemo(() => {
@@ -141,7 +143,7 @@ function IdentityDetail() {
 
   const handleDelete = () => {
     if (!identity) return;
-    setIdentities(identities.filter((i) => i !== identity));
+    dispatch(setIdentities(identities.filter((i) => i !== identity)));
     setTimeout(() => {
       navigate("/");
     }, 4);
@@ -177,8 +179,10 @@ function IdentityDetail() {
               onChange={(name) => {
                 const newIdentity = { ...identity, name: name || undefined };
                 setIdentity(newIdentity);
-                setIdentities(
-                  identities.map((i) => (i === identity ? newIdentity : i))
+                dispatch(
+                  setIdentities(
+                    identities.map((i) => (i === identity ? newIdentity : i))
+                  )
                 );
               }}
               fallback={

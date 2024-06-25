@@ -3,6 +3,7 @@ import {
   Container,
   CssBaseline,
   GlobalStyles,
+  Snackbar,
   ThemeProvider,
   createTheme,
 } from "@mui/material";
@@ -12,6 +13,8 @@ import { createBrowserRouter } from "react-router-dom";
 
 import Auth from "./Auth";
 import "./i18n";
+import { useAppDispatch, useAppSelector } from "./app/hooks";
+import { setMessage } from "./app/snackbar";
 
 const theme = createTheme({
   palette: {
@@ -59,6 +62,20 @@ const isAuthPage =
   searchParams.has("channel") ||
   (searchParams.has("challenge") && searchParams.has("callback_url"));
 
+function AppSnackbar() {
+  const message = useAppSelector((state) => state.snackbar.message);
+  const dispatch = useAppDispatch();
+
+  return (
+    <Snackbar
+      open={message !== null}
+      autoHideDuration={5000}
+      onClose={() => dispatch(setMessage(null))}
+      message={message}
+    />
+  );
+}
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -87,6 +104,7 @@ function App() {
           {isAuthPage ? <Auth /> : <RouterProvider router={router} />}
         </Card>
       </Container>
+      <AppSnackbar />
     </ThemeProvider>
   );
 }
