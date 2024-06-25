@@ -29,13 +29,21 @@ const theme = createTheme({
   },
 });
 
+const searchParams = new URLSearchParams(window.location.search);
+const isAuthPage =
+  window.opener ||
+  searchParams.has("channel") ||
+  (searchParams.has("challenge") && searchParams.has("callback_url"));
+
 const router = createBrowserRouter([
   {
     path: "/",
     lazy: () =>
-      import("./IdentitiesList").then((module) => ({
-        Component: module.default,
-      })),
+      isAuthPage
+        ? Promise.resolve({ Component: Auth })
+        : import("./IdentitiesList").then((module) => ({
+            Component: module.default,
+          })),
   },
   {
     path: "/:id",
@@ -55,12 +63,6 @@ const globalStyles = (
     }}
   />
 );
-
-const searchParams = new URLSearchParams(window.location.search);
-const isAuthPage =
-  window.opener ||
-  searchParams.has("channel") ||
-  (searchParams.has("challenge") && searchParams.has("callback_url"));
 
 function AppSnackbar() {
   const message = useAppSelector((state) => state.snackbar.message);
@@ -101,7 +103,7 @@ function App() {
           }}
           elevation={0}
         >
-          {isAuthPage ? <Auth /> : <RouterProvider router={router} />}
+          <RouterProvider router={router} />
         </Card>
       </Container>
       <AppSnackbar />
