@@ -15,11 +15,11 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import CreateIdentityDialog from "./CreateIdentityDialog";
+import UsingAnotherDevice from "./UsingAnotherDevice";
+import { setAuth } from "./app/auth";
+import { sign } from "./app/authMiddleware";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
 import { Identity } from "./app/identity";
-import UsingAnotherDevice from "./UsingAnotherDevice";
-import { sign } from "./app/authMiddleware";
-import { setAuth } from "./app/auth";
 
 function Auth() {
   const auth = useAppSelector((state) => state.auth);

@@ -89,11 +89,14 @@ export class PeerSocket extends EventTarget implements Socket {
           })
         );
       };
-      peer.addEventListener("iceconnectionstatechange", () => {
-        if (peer.iceConnectionState === "failed") {
+      peer.addEventListener("connectionstatechange", () => {
+        if (
+          peer.connectionState === "failed" ||
+          peer.connectionState === "disconnected"
+        ) {
           this.dispatchEvent(
             new ErrorEvent("error", {
-              error: new Error("ICE connection failed."),
+              error: new Error(`Connection ${peer.connectionState}.`),
             })
           );
         }

@@ -127,7 +127,7 @@ function Editable({
 
 function IdentityDetail() {
   const { id } = useParams<{ id: string }>();
-  const { identities } = useAppSelector((state) => state.identity);
+  const identities = useAppSelector((state) => state.identity.identities);
   const [identity, setIdentity] = useState<Identity | undefined | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);

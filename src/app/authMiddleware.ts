@@ -30,15 +30,14 @@ const RTC_CONFIGURATION: RTCConfiguration = {
   ],
 };
 
-const handleMessage = async (data: ParentMessage) => {
-  if (data.publicKey) {
-    const { publicKey } = data;
-    if (!publicKey.origin || !publicKey.challenge) return;
-    const { origin, challenge, username } = publicKey;
-    const { default: store } = await import("./store");
-    store.dispatch(setAuth({ origin, challenge, username }));
-  }
-};
+async function handleMessage(data: ParentMessage) {
+  if (!data.publicKey) return;
+  const { publicKey } = data;
+  if (!publicKey.origin || !publicKey.challenge) return;
+  const { origin, challenge, username } = publicKey;
+  const { default: store } = await import("./store");
+  store.dispatch(setAuth({ origin, challenge, username }));
+}
 
 async function handleChannel(channel: string) {
   const { PeerSocket } = await import("../peer");
