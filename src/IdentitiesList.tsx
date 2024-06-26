@@ -141,7 +141,7 @@ function IdentityList() {
 }
 
 function IdentitiesListPage() {
-  const { identities } = useAppSelector((state) => state.identity);
+  const identities = useAppSelector((state) => state.identity.identities);
   const [createIdentityDialogOpen, setCreateIdentityDialogOpen] =
     React.useState(false);
   const [importIdentityDialogOpen, setImportIdentityDialogOpen] =

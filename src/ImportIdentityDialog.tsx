@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { base58Fingerprint } from "./app/utils";
+import { base58Fingerprint, base64ToArrayBuffer } from "./app/utils";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
 import { setIdentities } from "./app/identity";
 
@@ -43,16 +43,14 @@ function ImportIdentityDialog({
 
   const handleImport = useCallback(async () => {
     const { secp256k1 } = await import("@noble/curves/secp256k1");
-    const privateKey = Uint8Array.from(atob(privateKeyBase64), (c) =>
-      c.charCodeAt(0)
-    );
+    const privateKey = base64ToArrayBuffer(privateKeyBase64);
     const publicKey = secp256k1.getPublicKey(privateKey);
     const id = await base58Fingerprint(publicKey);
     dispatch(
       setIdentities(
         identities.find((identity) => identity.id === id)
           ? identities
-          : [...identities, { id, privateKey }]
+          : [...identities, { id, privateKey: privateKeyBase64 }]
       )
     );
     onClose();

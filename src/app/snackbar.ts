@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 const snackbarSlice = createSlice({
   name: "snackbar",
@@ -6,7 +6,7 @@ const snackbarSlice = createSlice({
     message: null as string | null,
   },
   reducers: {
-    setMessage(state, action) {
+    setMessage(state, action: PayloadAction<string>) {
       state.message = action.payload;
     },
   },

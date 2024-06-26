@@ -17,7 +17,7 @@ const { secp256k1 } = await import("@noble/curves/secp256k1");
 export interface Identity {
   name?: string;
   id: string;
-  privateKey: Uint8Array;
+  privateKey: string;
 }
 
 const IDENTITIES_KEY = "webSignAuthIdentities";
@@ -45,11 +45,16 @@ async function createIdentity(options?: {
   }
   while (true) {
     const privateKey = crypto.getRandomValues(new Uint8Array(32));
+    const privateKeyBase64 = arrayBufferToBase64(privateKey);
     const publicKey = secp256k1.getPublicKey(privateKey);
     const fingerprint = await base58Fingerprint(publicKey);
     if (options.signal?.aborted) throw new Error("Aborted");
     if (!options.prefix || fingerprint.startsWith(options.prefix)) {
-      return { name: options.name, id: fingerprint, privateKey };
+      return {
+        name: options.name,
+        id: fingerprint,
+        privateKey: privateKeyBase64,
+      };
     }
   }
 }
@@ -71,13 +76,6 @@ export const appendIdentityThunk = createAsyncThunk(
   }
 );
 
-function jsonBinaryReplacer(_: string, value: any) {
-  if (value instanceof Uint8Array) {
-    return arrayBufferToBase64(value);
-  }
-  return value;
-}
-
 async function parseIdentity(identity: {
   name?: string;
   privateKey: string;
@@ -86,23 +84,23 @@ async function parseIdentity(identity: {
   const privateKey = base64ToArrayBuffer(privateKeyBase64);
   const publicKey = secp256k1.getPublicKey(privateKey);
   const fingerprint = await base58Fingerprint(publicKey);
-  return { name, id: fingerprint, privateKey };
+  return { name, id: fingerprint, privateKey: privateKeyBase64 };
 }
 
 async function initializeIdentities(): Promise<Identity[]> {
   const identities = window.localStorage.getItem(IDENTITIES_KEY);
   if (!identities) return [];
-  return Promise.all(JSON.parse(identities).map(parseIdentity));
+  const parsed = Promise.all(JSON.parse(identities).map(parseIdentity));
+  return parsed;
 }
 
 type ValueOf<T> = T[keyof T];
 type IdentityActions = ReturnType<ValueOf<typeof identitySlice.actions>>;
 
 export const identitiesMiddleware: Middleware<{}, any> = (store) => {
-  initializeIdentities().then((identities) => {
-    store.dispatch(identitySlice.actions.setIdentities(identities));
-  });
-
+  initializeIdentities().then((parsed) =>
+    store.dispatch(setIdentities(parsed))
+  );
   return (next) => async (action: IdentityActions) => {
     next(action);
     if (!action.type.startsWith("identity/")) return;
@@ -116,7 +114,7 @@ export const identitiesMiddleware: Middleware<{}, any> = (store) => {
         else
           window.localStorage.setItem(
             IDENTITIES_KEY,
-            JSON.stringify(identities, jsonBinaryReplacer)
+            JSON.stringify(identities)
           );
         break;
       }

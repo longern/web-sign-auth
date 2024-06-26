@@ -15,8 +15,9 @@ import {
   Tabs,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
+import { base64ToArrayBuffer } from "./app/utils";
 
-function Mnemonic({ privateKey }: { privateKey: Uint8Array }) {
+function Mnemonic({ privateKey: privateKeyBase64 }: { privateKey: string }) {
   const [mnemonic, setMnemonic] = useState<string>("");
   const { t } = useTranslation();
 
@@ -25,6 +26,7 @@ function Mnemonic({ privateKey }: { privateKey: Uint8Array }) {
       "https://cdn.jsdelivr.net/npm/bip39@3.1.0/src/wordlists/english.json"
     ).then(async (res) => {
       const wordlist = await res.json();
+      const privateKey = base64ToArrayBuffer(privateKeyBase64);
       const hash = await crypto.subtle.digest("SHA-256", privateKey);
       const checksum = new Uint8Array(hash.slice(0, 2));
       const bits = new Uint8Array(privateKey.length + checksum.length);
@@ -42,7 +44,7 @@ function Mnemonic({ privateKey }: { privateKey: Uint8Array }) {
       }
       setMnemonic(mnemonic.join(" "));
     });
-  }, [privateKey]);
+  }, [privateKeyBase64]);
 
   return (
     <Stack spacing={2}>
@@ -108,7 +110,7 @@ function PrivateKeyDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  privateKey: Uint8Array;
+  privateKey: string;
 }) {
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [tab, setTab] = useState<"base64" | "qrcode" | "mnemonic">("base64");
@@ -154,17 +156,13 @@ function PrivateKeyDialog({
                 {tab === "base64" ? (
                   <Stack spacing={2}>
                     <Card variant="outlined" sx={{ padding: 2 }}>
-                      {btoa(String.fromCharCode(...privateKey))}
+                      {privateKey}
                     </Card>
                     <Button
                       variant="contained"
                       size="large"
                       disabled={!navigator.clipboard}
-                      onClick={() =>
-                        navigator.clipboard.writeText(
-                          btoa(String.fromCharCode(...privateKey))
-                        )
-                      }
+                      onClick={() => navigator.clipboard.writeText(privateKey)}
                     >
                       {t("Copy to clipboard")}
                     </Button>
@@ -179,7 +177,7 @@ function PrivateKeyDialog({
                       justifyContent: "center",
                     }}
                   >
-                    <QRCode text={btoa(String.fromCharCode(...privateKey))} />
+                    <QRCode text={privateKey} />
                   </Box>
                 ) : null}
               </Box>

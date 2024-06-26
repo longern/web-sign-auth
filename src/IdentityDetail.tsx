@@ -26,6 +26,7 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 import PrivateKeyDialog from "./PrivateKeyDialog";
 import { Identity, setIdentities } from "./app/identity";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
+import { base64ToArrayBuffer } from "./app/utils";
 
 function IdentityItem({
   label,
@@ -137,7 +138,8 @@ function IdentityDetail() {
 
   const publicKey = useMemo(() => {
     if (!identity) return new Uint8Array();
-    const publicKey = secp256k1.getPublicKey(identity.privateKey);
+    const privateKey = base64ToArrayBuffer(identity.privateKey);
+    const publicKey = secp256k1.getPublicKey(privateKey);
     return publicKey;
   }, [identity]);
 
@@ -187,7 +189,7 @@ function IdentityDetail() {
               }}
               fallback={
                 <Typography component={"span"} color="textSecondary">
-                  {t("Unnamed")}
+                  {t("(Unnamed)")}
                 </Typography>
               }
             />
