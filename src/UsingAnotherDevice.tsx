@@ -1,33 +1,31 @@
 import { Box, Button, Stack, Typography } from "@mui/material";
-import React, { useEffect, useRef } from "react";
+import base58 from "bs58";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import base58 from "bs58";
-import { useAppDispatch, useAppSelector } from "./app/hooks";
+import QRCode from "./QRCode";
 import { setAuth } from "./app/auth";
 import { closePeerServer, createPeerServer } from "./app/authMiddleware";
+import { useAppDispatch, useAppSelector } from "./app/hooks";
 
 function UsingAnotherDevice({ onBack }: { onBack?: () => void }) {
   const channel = useAppSelector((state) => state.auth.channel);
   const remoteConnected = useAppSelector((state) => state.auth.remoteConnected);
-  const imgRef = useRef<HTMLImageElement | null>(null);
 
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
+
+  const channelURL = useMemo(() => {
+    const url = new URL(window.location.href);
+    for (const key of url.searchParams.keys()) url.searchParams.delete(key);
+    url.searchParams.set("channel", channel);
+    return url.toString();
+  }, [channel]);
 
   useEffect(() => {
     const channel = base58.encode(crypto.getRandomValues(new Uint8Array(16)));
     dispatch(setAuth({ channel }));
     createPeerServer(channel);
-    import("qrcode").then(async ({ toDataURL }) => {
-      const url = new URL(window.location.href);
-      Array.from(url.searchParams.keys()).forEach((key) =>
-        url.searchParams.delete(key)
-      );
-      url.searchParams.set("channel", channel);
-      const dataUrl = await toDataURL(url.toString(), { width: 192 });
-      imgRef.current!.src = dataUrl;
-    });
 
     return () => {
       closePeerServer();
@@ -44,15 +42,7 @@ function UsingAnotherDevice({ onBack }: { onBack?: () => void }) {
         <Typography>{t("scanQRCodeToSign")}</Typography>
       )}
       <Box sx={{ display: "flex", justifyContent: "center" }}>
-        <img
-          ref={imgRef}
-          alt="QR code"
-          width="192"
-          height="192"
-          style={{
-            display: channel === null || remoteConnected ? "none" : "block",
-          }}
-        />
+        {channel !== null && !remoteConnected && <QRCode text={channelURL} />}
       </Box>
       <Stack direction="row" sx={{ width: "100%" }}>
         <Button size="large" onClick={onBack}>

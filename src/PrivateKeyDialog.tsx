@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Close as CloseIcon } from "@mui/icons-material";
 import {
   Alert,
   Box,
@@ -14,8 +13,11 @@ import {
   Tab,
   Tabs,
 } from "@mui/material";
-import { Close as CloseIcon } from "@mui/icons-material";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+
 import { base64ToArrayBuffer } from "./app/utils";
+import QRCode from "./QRCode";
 
 function Mnemonic({ privateKey: privateKeyBase64 }: { privateKey: string }) {
   const [mnemonic, setMnemonic] = useState<string>("");
@@ -71,35 +73,6 @@ function Mnemonic({ privateKey: privateKeyBase64 }: { privateKey: string }) {
         {t("Copy to clipboard")}
       </Button>
     </Stack>
-  );
-}
-
-function QRCode({ text }: { text: string }) {
-  const [loading, setLoading] = useState(true);
-  const imgRef = useRef<HTMLImageElement>(null);
-  useEffect(() => {
-    import("qrcode").then(async ({ toDataURL }) => {
-      const url = await toDataURL(text, { width: 192 });
-      imgRef.current.src = url;
-      setLoading(false);
-    });
-  }, [text]);
-  return (
-    <Card
-      variant="outlined"
-      sx={{
-        width: 192,
-        height: 192,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      {loading && <CircularProgress />}
-      <Box sx={{ display: loading ? "none" : "flex" }}>
-        <img ref={imgRef} alt="QR code" width={192} height={192} />
-      </Box>
-    </Card>
   );
 }
 
@@ -177,7 +150,21 @@ function PrivateKeyDialog({
                       justifyContent: "center",
                     }}
                   >
-                    <QRCode text={privateKey} />
+                    <Card
+                      variant="outlined"
+                      sx={{
+                        width: 192,
+                        height: 192,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <QRCode
+                        text={privateKey}
+                        fallback={<CircularProgress />}
+                      />
+                    </Card>
                   </Box>
                 ) : null}
               </Box>

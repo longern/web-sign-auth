@@ -1,6 +1,6 @@
 import type { Middleware } from "@reduxjs/toolkit";
 
-import type { PeerServer, PeerSocket, Socket } from "../peer";
+import type { PeerServer, PeerSocket, Socket } from "./peer";
 import { setAuth } from "./auth";
 import type { Identity } from "./identity";
 import { setMessage } from "./snackbar";
@@ -40,7 +40,7 @@ async function handleMessage(data: ParentMessage) {
 }
 
 async function handleChannel(channel: string) {
-  const { PeerSocket } = await import("../peer");
+  const { PeerSocket } = await import("./peer");
   const { default: store } = await import("./store");
   const peerSocket = new PeerSocket(channel, RTC_CONFIGURATION);
   peerSocket.addEventListener("message", (event: MessageEvent<string>) => {
@@ -131,7 +131,7 @@ export async function sign({
 
 export async function createPeerServer(channel: string) {
   const { default: store } = await import("./store");
-  const { PeerServer } = await import("../peer");
+  const { PeerServer } = await import("./peer");
   peerServer = new PeerServer(RTC_CONFIGURATION);
   peerServer.bind(channel);
   const { auth } = store.getState();
