@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router";
+import {
+  NavigateBefore as NavigateBeforeIcon,
+  Share as ShareIcon,
+  Visibility as VisibilityIcon,
+} from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -16,16 +18,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import {
-  NavigateBefore as NavigateBeforeIcon,
-  Share as ShareIcon,
-  Visibility as VisibilityIcon,
-} from "@mui/icons-material";
 import { secp256k1 } from "@noble/curves/secp256k1";
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router";
 
 import PrivateKeyDialog from "./PrivateKeyDialog";
-import { Identity, setIdentities } from "./app/identity";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
+import { Identity, setIdentities } from "./app/identity";
 import { base64ToArrayBuffer } from "./app/utils";
 
 function IdentityItem({

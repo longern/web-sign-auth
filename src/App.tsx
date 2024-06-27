@@ -12,21 +12,13 @@ import { RouterProvider } from "react-router";
 import { createBrowserRouter } from "react-router-dom";
 
 import Auth from "./Auth";
-import "./i18n";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
 import { setMessage } from "./app/snackbar";
+import "./i18n";
 
 const theme = createTheme({
-  palette: {
-    background: {
-      default: "#f5f5f5",
-    },
-  },
-  typography: {
-    button: {
-      textTransform: "none",
-    },
-  },
+  palette: { background: { default: "#f5f5f5" } },
+  typography: { button: { textTransform: "none" } },
 });
 
 const searchParams = new URLSearchParams(window.location.search);

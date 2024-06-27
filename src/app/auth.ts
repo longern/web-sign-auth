@@ -1,9 +1,9 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-const searchParams = new URLSearchParams(window.location.search);
-
 type AtLeastOne<T, U = { [K in keyof T]: Pick<T, K> }> = Partial<T> &
   U[keyof U];
+
+const searchParams = new URLSearchParams(window.location.search);
 
 const authSlice = createSlice({
   name: "auth",

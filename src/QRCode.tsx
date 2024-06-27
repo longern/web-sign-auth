@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-export function QRCode({
+function QRCode({
   text,
   fallback,
   width = 192,

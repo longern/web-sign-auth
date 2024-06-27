@@ -71,8 +71,8 @@ async function handleOpener() {
   const { default: store } = await import("./store");
   authSocket = Object.assign(new EventTarget(), {
     send: (data: string) => {
-      window.opener.postMessage(JSON.parse(data), origin);
-      setTimeout(() => store.dispatch(setAuth({ success: true })), 4);
+      const state = store.getState();
+      window.opener.postMessage(JSON.parse(data), state.auth.origin);
       window.close();
     },
     close: () => {},

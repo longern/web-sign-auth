@@ -1,3 +1,4 @@
+import { NavigateNext as NavigateNextIcon } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -15,11 +16,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { NavigateNext as NavigateNextIcon } from "@mui/icons-material";
+import { secp256k1 } from "@noble/curves/secp256k1";
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
-import { secp256k1 } from "@noble/curves/secp256k1";
 
 import CreateIdentityDialog from "./CreateIdentityDialog";
 import ImportIdentityDialog from "./ImportIdentityDialog";
