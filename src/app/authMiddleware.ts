@@ -1,10 +1,10 @@
 import type { Middleware } from "@reduxjs/toolkit";
 
-import type { PeerServer, PeerSocket, Socket } from "./peer";
+import { PeerServer, PeerSocket, Socket } from "./peer";
 import { setAuth } from "./auth";
 import type { Identity } from "./identity";
 import { setMessage } from "./snackbar";
-import type { AppState } from "./store";
+import type { AppDispatch, AppState } from "./store";
 import { base64ToArrayBuffer } from "./utils";
 
 type ParentMessage = {
@@ -30,33 +30,31 @@ const RTC_CONFIGURATION: RTCConfiguration = {
   ],
 };
 
-async function handleMessage(data: ParentMessage) {
+function handleMessage(data: ParentMessage, dispatch: AppDispatch) {
   if (!data.publicKey) return;
   const { publicKey } = data;
   if (!publicKey.origin || !publicKey.challenge) return;
   const { origin, challenge, username } = publicKey;
-  const { default: store } = await import("./store");
-  store.dispatch(setAuth({ origin, challenge, username }));
+  dispatch(setAuth({ origin, challenge, username }));
 }
 
-async function handleChannel(channel: string) {
-  const { PeerSocket } = await import("./peer");
-  const { default: store } = await import("./store");
-  const peerSocket = new PeerSocket(channel, RTC_CONFIGURATION);
+function handleChannel(channel: string, dispatch: AppDispatch) {
+  const peerSocket = new PeerSocket(channel, {
+    rtcConfiguration: RTC_CONFIGURATION,
+  });
   peerSocket.addEventListener("message", (event: MessageEvent<string>) => {
-    handleMessage(JSON.parse(event.data));
+    handleMessage(JSON.parse(event.data), dispatch);
   });
   peerSocket.addEventListener("error", (event: ErrorEvent) => {
-    store.dispatch(setMessage(event.error.message));
+    dispatch(setMessage(event.error.message));
   });
   authSocket = peerSocket;
-  store.dispatch(setAuth({ hasPeerSocket: true }));
+  dispatch(setAuth({ hasPeerSocket: true }));
 }
 
-async function handleCallbackURL(callbackURL: string) {
+function handleCallbackURL(callbackURL: string, dispatch: AppDispatch) {
   const origin = new URL(callbackURL).origin;
-  const { default: store } = await import("./store");
-  store.dispatch(setAuth({ origin }));
+  dispatch(setAuth({ origin }));
   authSocket = Object.assign(new EventTarget(), {
     send: (data: string) => {
       const searchParams = new URLSearchParams();
@@ -67,19 +65,17 @@ async function handleCallbackURL(callbackURL: string) {
   });
 }
 
-async function handleOpener() {
-  const { default: store } = await import("./store");
+function handleOpener(origin: string, dispatch: AppDispatch) {
   authSocket = Object.assign(new EventTarget(), {
     send: (data: string) => {
-      const state = store.getState();
-      window.opener.postMessage(JSON.parse(data), state.auth.origin);
+      window.opener.postMessage(JSON.parse(data), origin);
       window.close();
     },
     close: () => {},
   });
   const handleOpenerMessage = async (event: MessageEvent<ParentMessage>) => {
     if (event.source !== window.opener) return;
-    handleMessage(event.data);
+    handleMessage(event.data, dispatch);
     window.removeEventListener("message", handleOpenerMessage);
   };
   window.addEventListener("message", handleOpenerMessage);
@@ -88,9 +84,10 @@ async function handleOpener() {
 const authMiddleware: Middleware<{}, AppState> = (store) => {
   const { auth } = store.getState();
 
-  if (auth.channel) handleChannel(auth.channel);
-  else if (auth.callbackURL) handleCallbackURL(auth.callbackURL);
-  else if (window.opener) handleOpener();
+  if (auth.channel) handleChannel(auth.channel, store.dispatch);
+  else if (auth.callbackURL)
+    handleCallbackURL(auth.callbackURL, store.dispatch);
+  else if (window.opener) handleOpener(auth.origin, store.dispatch);
 
   return (next) => (action) => next(action);
 };
@@ -132,7 +129,7 @@ export async function sign({
 export async function createPeerServer(channel: string) {
   const { default: store } = await import("./store");
   const { PeerServer } = await import("./peer");
-  peerServer = new PeerServer(RTC_CONFIGURATION);
+  peerServer = new PeerServer({ rtcConfiguration: RTC_CONFIGURATION });
   peerServer.bind(channel);
   const { auth } = store.getState();
   peerServer.addEventListener(

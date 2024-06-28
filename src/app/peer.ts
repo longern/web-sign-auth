@@ -17,25 +17,44 @@ function waitIceGathering(peer: RTCPeerConnection, timeout = 1000) {
   });
 }
 
+function randomHex(length: number) {
+  const randomValues = crypto.getRandomValues(new Uint8Array(length));
+  const toHex = (b: number) => b.toString(16).padStart(2, "0");
+  return Array.from(randomValues).map(toHex).join("");
+}
+
+function dataChannelEventProxy(
+  dataChannel: RTCDataChannel,
+  target: EventTarget
+) {
+  dataChannel.onmessage = (event) => {
+    target.dispatchEvent(new MessageEvent("message", { data: event.data }));
+  };
+  dataChannel.onerror = (event: RTCErrorEvent) => {
+    target.dispatchEvent(new ErrorEvent("error", { error: event }));
+  };
+  dataChannel.onclose = () => {
+    target.dispatchEvent(new CloseEvent("close"));
+  };
+  target.dispatchEvent(new Event("open"));
+}
+
 export class PeerSocket extends EventTarget implements Socket {
   private peer: RTCPeerConnection;
   private dataChannel: RTCDataChannel;
 
-  constructor(id: string, options?: RTCConfiguration & { endpoint?: string });
-  constructor(peer: RTCPeerConnection);
   constructor(
-    id: string | RTCPeerConnection,
-    options?: RTCConfiguration & { endpoint?: string }
+    id?: string,
+    options?: { rtcConfiguration?: RTCConfiguration; endpoint?: string }
   ) {
     super();
 
-    if (typeof id !== "string") return void this.#init(id);
+    if (typeof id !== "string") return;
 
     options = options || {};
-    const endpoint = options.endpoint || DEFAULT_SIGNAL_ENDPOINT;
-    delete options.endpoint;
+    const { endpoint = DEFAULT_SIGNAL_ENDPOINT, rtcConfiguration } = options;
 
-    const peer = new RTCPeerConnection(options);
+    const peer = new RTCPeerConnection(rtcConfiguration);
     this.peer = peer;
     this.dataChannel = peer.createDataChannel("dataChannel");
     peer.createOffer().then(async (offer) => {
@@ -43,9 +62,7 @@ export class PeerSocket extends EventTarget implements Socket {
       const { sdp } = await waitIceGathering(peer);
       let signalSocket = new WebSocket(endpoint);
       signalSocket.onopen = () => {
-        const peerId = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
+        const peerId = randomHex(16);
         const messages = [
           { type: "createTopic", name: peerId },
           { type: "consume", topic: peerId },
@@ -106,29 +123,8 @@ export class PeerSocket extends EventTarget implements Socket {
       });
     });
     this.dataChannel.onopen = () => {
-      this.#handleDataChannelOpen(this.dataChannel);
+      dataChannelEventProxy(this.dataChannel, this);
     };
-  }
-
-  #init(peer: RTCPeerConnection) {
-    this.peer = peer;
-    peer.ondatachannel = (event) => {
-      this.dataChannel = event.channel;
-      this.#handleDataChannelOpen(this.dataChannel);
-    };
-  }
-
-  #handleDataChannelOpen(dataChannel: RTCDataChannel) {
-    dataChannel.onmessage = (event) => {
-      this.dispatchEvent(new MessageEvent("message", { data: event.data }));
-    };
-    dataChannel.onerror = (event: RTCErrorEvent) => {
-      this.dispatchEvent(new ErrorEvent("error", { error: event }));
-    };
-    dataChannel.onclose = () => {
-      this.dispatchEvent(new CloseEvent("close"));
-    };
-    this.dispatchEvent(new Event("open"));
   }
 
   send(data: string) {
@@ -139,6 +135,16 @@ export class PeerSocket extends EventTarget implements Socket {
     this.dataChannel.close();
     this.peer.close();
   }
+
+  static from(peer: RTCPeerConnection) {
+    const peerSocket = new PeerSocket();
+    peerSocket.peer = peer;
+    peer.ondatachannel = (event) => {
+      peerSocket.dataChannel = event.channel;
+      dataChannelEventProxy(peerSocket.dataChannel, peerSocket);
+    };
+    return peerSocket;
+  }
 }
 
 export class PeerServer extends EventTarget {
@@ -146,17 +152,15 @@ export class PeerServer extends EventTarget {
   config: RTCConfiguration;
   abortController: AbortController;
 
-  constructor(
-    options?: RTCConfiguration & {
-      endpoint?: string;
-    }
-  ) {
+  constructor(options?: {
+    rtcConfiguration?: RTCConfiguration;
+    endpoint?: string;
+  }) {
     super();
 
     options = options || {};
     this.endpoint = options.endpoint || DEFAULT_SIGNAL_ENDPOINT;
-    delete options.endpoint;
-    this.config = options;
+    this.config = options.rtcConfiguration;
     this.abortController = new AbortController();
   }
 
@@ -182,7 +186,7 @@ export class PeerServer extends EventTarget {
           await peer.setLocalDescription(answer);
           const { sdp } = await waitIceGathering(peer);
           if (this.abortController.signal.aborted) return;
-          const peerSocket = new PeerSocket(peer);
+          const peerSocket = PeerSocket.from(peer);
           signalSocket.send(
             JSON.stringify({
               type: "produce",
