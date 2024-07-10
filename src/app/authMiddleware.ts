@@ -84,10 +84,12 @@ function handleOpener(origin: string, dispatch: AppDispatch) {
 const authMiddleware: Middleware<{}, AppState> = (store) => {
   const { auth } = store.getState();
 
-  if (auth.channel) handleChannel(auth.channel, store.dispatch);
-  else if (auth.callbackURL)
-    handleCallbackURL(auth.callbackURL, store.dispatch);
-  else if (window.opener) handleOpener(auth.origin, store.dispatch);
+  setTimeout(() => {
+    if (auth.channel) handleChannel(auth.channel, store.dispatch);
+    else if (auth.callbackURL)
+      handleCallbackURL(auth.callbackURL, store.dispatch);
+    else if (window.opener) handleOpener(auth.origin, store.dispatch);
+  }, 0);
 
   return (next) => (action) => next(action);
 };
