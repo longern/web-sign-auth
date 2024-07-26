@@ -23,7 +23,7 @@ const RTC_CONFIGURATION: RTCConfiguration = {
     { urls: "STUN:freestun.net:3479" },
     { urls: "STUN:stun.cloudflare.com:3478" },
     {
-      urls: "TURN:freeturn.net:3478",
+      urls: "TURN:freeturn.net:3479",
       username: "free",
       credential: "free",
     },
