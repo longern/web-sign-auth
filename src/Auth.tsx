@@ -186,6 +186,7 @@ function Auth() {
                     challenge: auth.challenge,
                   });
                   setTimeout(() => dispatch(setAuth({ success: true })), 4);
+                  setTimeout(() => window.close(), 1500);
                 }}
                 disabled={currentIdentity === null}
               >

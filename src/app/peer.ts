@@ -31,7 +31,11 @@ function dataChannelEventProxy(
     target.dispatchEvent(new MessageEvent("message", { data: event.data }));
   };
   dataChannel.onerror = (event: RTCErrorEvent) => {
-    target.dispatchEvent(new ErrorEvent("error", { error: event }));
+    // https://datatracker.ietf.org/doc/html/rfc4960#section-3.3.10
+    // User Initiated Abort
+    if (event.error.sctpCauseCode === 12) return dataChannel.close();
+
+    target.dispatchEvent(new ErrorEvent("error", { error: event.error }));
   };
   dataChannel.onclose = () => {
     target.dispatchEvent(new CloseEvent("close"));
@@ -125,6 +129,7 @@ export class PeerSocket extends EventTarget implements Socket {
     this.dataChannel.onopen = () => {
       dataChannelEventProxy(this.dataChannel, this);
     };
+    this.dataChannel.onclose = () => this.close();
   }
 
   send(data: string) {

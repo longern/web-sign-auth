@@ -1,4 +1,7 @@
-import { NavigateNext as NavigateNextIcon } from "@mui/icons-material";
+import {
+  NavigateNext as NavigateNextIcon,
+  Settings as SettingsIcon,
+} from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
@@ -8,6 +11,7 @@ import {
   CardActions,
   CircularProgress,
   Divider,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
@@ -23,6 +27,7 @@ import { Link as RouterLink } from "react-router-dom";
 
 import CreateIdentityDialog from "./CreateIdentityDialog";
 import ImportIdentityDialog from "./ImportIdentityDialog";
+import SettingsDialog from "./SettingsDialog";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
 import { setMessage } from "./app/snackbar";
 
@@ -83,6 +88,7 @@ function authenticate(providerOrigin: string, options?: { timeout?: number }) {
           digest,
           toBase64Uint8Array(publicKey)
         );
+        childWindow.close();
         if (valid) {
           resolve({ name, id });
         } else {
@@ -146,6 +152,7 @@ function IdentitiesListPage() {
     React.useState(false);
   const [importIdentityDialogOpen, setImportIdentityDialogOpen] =
     React.useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = React.useState(false);
 
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
@@ -169,6 +176,10 @@ function IdentitiesListPage() {
       <Stack direction="row" sx={{ alignItems: "center", paddingY: 1, gap: 2 }}>
         <img src="/logo192.png" alt="Logo" width="48" height="48" />
         <Typography variant="h5">Web Sign Auth</Typography>
+        <Box sx={{ flexGrow: 1 }} />
+        <IconButton onClick={() => setSettingsDialogOpen(true)}>
+          <SettingsIcon />
+        </IconButton>
       </Stack>
       {identities.length > 0 ? (
         <React.Fragment>
@@ -236,6 +247,10 @@ function IdentitiesListPage() {
       <ImportIdentityDialog
         open={importIdentityDialogOpen}
         onClose={() => setImportIdentityDialogOpen(false)}
+      />
+      <SettingsDialog
+        open={settingsDialogOpen}
+        onClose={() => setSettingsDialogOpen(false)}
       />
     </Stack>
   );

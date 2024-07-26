@@ -18,17 +18,67 @@ type ParentMessage = {
 let authSocket: Socket;
 let peerServer: PeerServer;
 
-const RTC_CONFIGURATION: RTCConfiguration = {
-  iceServers: [
-    { urls: "STUN:freestun.net:3479" },
-    { urls: "STUN:stun.cloudflare.com:3478" },
-    {
-      urls: "TURN:freeturn.net:3479",
-      username: "free",
-      credential: "free",
-    },
-  ],
-};
+function getRTCConfigurationWrapper() {
+  let rtcConfiguration: RTCConfiguration | null = null;
+
+  return async () => {
+    if (rtcConfiguration) return rtcConfiguration;
+    rtcConfiguration = {
+      iceServers: [
+        { urls: "STUN:freestun.net:3479" },
+        { urls: "STUN:stun.cloudflare.com:3478" },
+        {
+          urls: "TURN:freeturn.net:3479",
+          username: "free",
+          credential: "free",
+        },
+      ],
+    };
+    const storedTurnServer = localStorage.getItem("webSignAuthTurnServer");
+    if (storedTurnServer) {
+      const turnSettings:
+        | {
+            type: "turn";
+            url: string;
+            username: string;
+            password: string;
+          }
+        | {
+            type: "cloudflare";
+            keyId: string;
+            keyToken: string;
+            customDomain?: string;
+          } = JSON.parse(storedTurnServer);
+      if (turnSettings.type === "turn") {
+        rtcConfiguration.iceServers.push({
+          urls: turnSettings.url,
+          username: turnSettings.username,
+          credential: turnSettings.password,
+        });
+      } else if (turnSettings.type === "cloudflare") {
+        const response = await fetch(
+          `https://rtc.live.cloudflare.com/v1/turn/keys/${turnSettings.keyId}/credentials/generate`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${turnSettings.keyToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ttl: 86400 }),
+          }
+        );
+        let text = await response.text();
+        if (turnSettings.customDomain)
+          text = text.replace("turn.cloudflare.com", turnSettings.customDomain);
+        const { iceServers } = JSON.parse(text);
+        rtcConfiguration.iceServers.push(iceServers);
+      }
+    }
+    return rtcConfiguration;
+  };
+}
+
+const getRTCConfiguration = getRTCConfigurationWrapper();
 
 function handleMessage(data: ParentMessage, dispatch: AppDispatch) {
   if (!data.publicKey) return;
@@ -38,9 +88,9 @@ function handleMessage(data: ParentMessage, dispatch: AppDispatch) {
   dispatch(setAuth({ origin, challenge, username }));
 }
 
-function handleChannel(channel: string, dispatch: AppDispatch) {
+async function handleChannel(channel: string, dispatch: AppDispatch) {
   const peerSocket = new PeerSocket(channel, {
-    rtcConfiguration: RTC_CONFIGURATION,
+    rtcConfiguration: await getRTCConfiguration(),
   });
   peerSocket.addEventListener("message", (event: MessageEvent<string>) => {
     handleMessage(JSON.parse(event.data), dispatch);
@@ -69,7 +119,6 @@ function handleOpener(origin: string, dispatch: AppDispatch) {
   authSocket = Object.assign(new EventTarget(), {
     send: (data: string) => {
       window.opener.postMessage(JSON.parse(data), origin);
-      window.close();
     },
     close: () => {},
   });
@@ -126,12 +175,15 @@ export async function sign({
     },
   };
   authSocket.send(JSON.stringify(message));
+  setTimeout(() => authSocket.close(), 1000);
 }
 
 export async function createPeerServer(channel: string) {
   const { default: store } = await import("./store");
   const { PeerServer } = await import("./peer");
-  peerServer = new PeerServer({ rtcConfiguration: RTC_CONFIGURATION });
+  peerServer = new PeerServer({
+    rtcConfiguration: await getRTCConfiguration(),
+  });
   peerServer.bind(channel);
   const { auth } = store.getState();
   peerServer.addEventListener(
