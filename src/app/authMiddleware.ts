@@ -98,6 +98,9 @@ async function handleChannel(channel: string, dispatch: AppDispatch) {
   peerSocket.addEventListener("error", (event: ErrorEvent) => {
     dispatch(setMessage(event.error.message));
   });
+  peerSocket.addEventListener("close", () => {
+    dispatch(setAuth({ hasPeerSocket: false }));
+  });
   authSocket = peerSocket;
   dispatch(setAuth({ hasPeerSocket: true }));
 }
