@@ -69,7 +69,7 @@ function getRTCConfigurationWrapper() {
         );
         let text = await response.text();
         if (turnSettings.customDomain)
-          text = text.replace("turn.cloudflare.com", turnSettings.customDomain);
+          text = text.replaceAll("turn.cloudflare.com", turnSettings.customDomain);
         const { iceServers } = JSON.parse(text);
         rtcConfiguration.iceServers.push(iceServers);
       }
